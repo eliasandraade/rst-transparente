@@ -18,6 +18,7 @@ import {
   MessageSquare,
   BarChart2,
   FileDown,
+  UserCircle,
 } from "lucide-react";
 
 const links = [
@@ -119,11 +120,21 @@ export default function AdminNav({ userRole }: AdminNavProps) {
         </ul>
       </nav>
 
-      {/* Logout */}
-      <div className="p-4 border-t border-border">
+      {/* Perfil + Logout */}
+      <div className="p-4 border-t border-border space-y-1">
+        <Link
+          href="/admin/perfil"
+          className={cn(
+            "flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground px-3 py-2 rounded-md hover:bg-muted transition-colors",
+            pathname === "/admin/perfil" ? "bg-primary/10 text-primary" : ""
+          )}
+        >
+          <UserCircle className="w-4 h-4" aria-hidden="true" />
+          Meu Perfil
+        </Link>
         <Link
           href="/"
-          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-2 px-3 py-2 rounded-md hover:bg-muted transition-colors"
+          className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground px-3 py-2 rounded-md hover:bg-muted transition-colors"
         >
           <Building2 className="w-4 h-4" aria-hidden="true" />
           Ver portal público
