@@ -19,6 +19,7 @@ import {
   BarChart2,
   FileDown,
   UserCircle,
+  UsersRound,
 } from "lucide-react";
 
 const links = [
@@ -31,6 +32,7 @@ const links = [
   { href: "/admin/propostas", icone: MessageSquare, label: "Propostas" },
   { href: "/admin/enquetes", icone: BarChart2, label: "Enquetes" },
   { href: "/admin/planilhas", icone: FileDown, label: "Planilhas" },
+  { href: "/admin/membros", icone: UsersRound, label: "Quem Somos" },
 ];
 
 interface AdminNavProps {
@@ -50,10 +52,10 @@ export default function AdminNav({ userRole }: AdminNavProps) {
           </div>
           <div>
             <div className="font-bold text-sm text-foreground leading-tight">
-              Área Administrativa
+              Transparência RST
             </div>
             <div className="text-xs text-muted-foreground leading-tight">
-              Portal da Transparência
+              Área Administrativa
             </div>
           </div>
         </div>

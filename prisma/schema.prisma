@@ -223,6 +223,22 @@ model VotoEnquete {
   @@map("votos_enquete")
 }
 
+// ─── Membros da gestão (página Quem Somos) ────────────────────────────────────
+
+model Membro {
+  id        String   @id @default(cuid())
+  nome      String
+  cargo     String
+  descricao String?  @db.Text
+  fotoUrl   String?
+  ordem     Int      @default(0)
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("membros")
+}
+
 // ─── Configuração do portal ───────────────────────────────────────────────────
 
 model ConfigPortal {
