@@ -100,7 +100,13 @@ async function getMetricas(periodo: string): Promise<MetricasPeriodo> {
 
 export default async function MetricasPage({ searchParams }: Props) {
   const params = await searchParams;
-  const periodo = params.periodo ?? periodoAtual();
+
+  const ultimoPublicado = await prisma.lancamento.findFirst({
+    where: { status: "PUBLICADO" },
+    orderBy: { periodo: "desc" },
+    select: { periodo: true },
+  });
+  const periodo = params.periodo ?? ultimoPublicado?.periodo ?? periodoAtual();
   const metricas = await getMetricas(periodo);
 
   const periodosDisponiveis = await prisma.lancamento

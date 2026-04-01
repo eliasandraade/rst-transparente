@@ -56,9 +56,18 @@ async function getDadosFinanceiros(periodo: string) {
   };
 }
 
+async function getUltimoPeriodoPublicado(): Promise<string> {
+  const ultimo = await prisma.lancamento.findFirst({
+    where: { status: "PUBLICADO" },
+    orderBy: { periodo: "desc" },
+    select: { periodo: true },
+  });
+  return ultimo?.periodo ?? periodoAtual();
+}
+
 export default async function FinanceiroPage({ searchParams }: Props) {
   const params = await searchParams;
-  const periodo = params.periodo ?? periodoAtual();
+  const periodo = params.periodo ?? await getUltimoPeriodoPublicado();
   const dados = await getDadosFinanceiros(periodo);
 
   const temDados =
