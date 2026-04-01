@@ -1,0 +1,113 @@
+// Prisma Schema — Portal da Transparência
+// Condomínio Residencial Santíssima Trindade
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── Usuários da área administrativa ─────────────────────────────────────────
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      Role     @default(CONSELHO)
+  ativo     Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
+
+enum Role {
+  MASTER
+  CONSELHO
+}
+
+// ─── Categorias financeiras ───────────────────────────────────────────────────
+
+model Categoria {
+  id          String         @id @default(cuid())
+  nome        String
+  tipo        TipoLancamento
+  cor         String         @default("#64748B") // hex para gráficos
+  ativo       Boolean        @default(true)
+  ordem       Int            @default(0)
+  lancamentos Lancamento[]
+  createdAt   DateTime       @default(now())
+
+  @@map("categorias")
+}
+
+enum TipoLancamento {
+  RECEITA
+  DESPESA
+}
+
+// ─── Lançamentos financeiros (receitas e despesas) ────────────────────────────
+
+model Lancamento {
+  id          String           @id @default(cuid())
+  tipo        TipoLancamento
+  categoriaId String
+  categoria   Categoria        @relation(fields: [categoriaId], references: [id])
+  descricao   String
+  valor       Decimal          @db.Decimal(12, 2)
+  data        DateTime         @db.Date
+  fornecedor  String?
+  observacoes String?
+  periodo     String           // "2025-03" (YYYY-MM)
+  status      StatusPublicacao @default(RASCUNHO)
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@index([periodo])
+  @@index([tipo])
+  @@index([status])
+  @@map("lancamentos")
+}
+
+enum StatusPublicacao {
+  RASCUNHO
+  PUBLICADO
+}
+
+// ─── Pareceres do Conselho Fiscal ─────────────────────────────────────────────
+
+model Parecer {
+  id              String           @id @default(cuid())
+  periodoRef      String           // "2025-03" (YYYY-MM)
+  titulo          String
+  texto           String?          @db.Text
+  arquivoUrl      String?          // URL do PDF no Cloudinary
+  arquivoNome     String?          // Nome original do arquivo
+  dataEmissao     DateTime         @db.Date
+  membrosConselho String?          // Nomes separados por ponto-e-vírgula
+  status          StatusPublicacao @default(RASCUNHO)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([periodoRef])
+  @@index([status])
+  @@map("pareceres")
+}
+
+// ─── Configuração do portal ───────────────────────────────────────────────────
+
+model ConfigPortal {
+  id             String   @id @default(cuid())
+  nomeCondominio String   @default("Condomínio Residencial Santíssima Trindade")
+  cnpj           String?
+  endereco       String?
+  logoUrl        String?
+  periodoAtivo   String   @default("") // Período padrão exibido nas páginas públicas
+  updatedAt      DateTime @updatedAt
+
+  @@map("config_portal")
+}
