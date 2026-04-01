@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { Metadata } from "next";
 import { PlusCircle, Pencil, Eye, EyeOff } from "lucide-react";
 import PublicarLancamentoButton from "@/components/admin/PublicarLancamentoButton";
+import PublicarTodosButton from "@/components/admin/PublicarTodosButton";
 
 export const metadata: Metadata = { title: "Lançamentos" };
 
@@ -45,10 +46,16 @@ export default async function LancamentosPage({ searchParams }: Props) {
             Gerencie receitas e despesas do condomínio
           </p>
         </div>
-        <Link href="/admin/lancamentos/novo" className="btn-primary">
-          <PlusCircle className="w-4 h-4" aria-hidden="true" />
-          Novo lançamento
-        </Link>
+        <div className="flex gap-2 flex-wrap">
+          <PublicarTodosButton
+            periodo={periodo}
+            totalRascunhos={lancamentos.filter((l) => l.status === "RASCUNHO").length}
+          />
+          <Link href="/admin/lancamentos/novo" className="btn-primary">
+            <PlusCircle className="w-4 h-4" aria-hidden="true" />
+            Novo lançamento
+          </Link>
+        </div>
       </div>
 
       {/* Filtros */}
