@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { Building2 } from "lucide-react";
+import { Building2, LogIn } from "lucide-react";
 
 const links = [
   { href: "/financeiro", label: "Receitas e Despesas" },
@@ -35,6 +35,15 @@ export default function Navbar() {
                 Condomínio Residencial Santíssima Trindade
               </div>
             </div>
+          </Link>
+
+          <Link
+            href="/admin/login"
+            className="flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors px-3 py-2 rounded-md hover:bg-muted min-h-[44px]"
+            aria-label="Entrar na área administrativa"
+          >
+            <LogIn className="w-4 h-4" aria-hidden="true" />
+            <span className="hidden sm:inline">Entrar</span>
           </Link>
         </div>
 
