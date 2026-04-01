@@ -16,7 +16,7 @@ const ObraSchema = z.object({
   publicado: z.boolean().optional(),
 });
 
-export async function GET(_request: Request) {
+export async function GET() {
   try {
     const session = await auth();
 
