@@ -11,6 +11,7 @@ import {
   LogOut,
   Building2,
   Settings,
+  Users,
 } from "lucide-react";
 
 const links = [
@@ -69,6 +70,23 @@ export default function AdminNav({ userRole }: AdminNavProps) {
               </li>
             );
           })}
+
+          {(userRole === "MASTER" || userRole === "SINDICO") && (
+            <li>
+              <Link
+                href="/admin/usuarios"
+                className={cn(
+                  "flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium transition-colors",
+                  pathname?.startsWith("/admin/usuarios")
+                    ? "bg-primary/10 text-primary"
+                    : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                )}
+              >
+                <Users className="w-4 h-4 flex-shrink-0" aria-hidden="true" />
+                Usuários
+              </Link>
+            </li>
+          )}
 
           {userRole === "MASTER" && (
             <li>

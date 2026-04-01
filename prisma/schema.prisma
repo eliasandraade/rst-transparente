@@ -27,6 +27,8 @@ model User {
 
 enum Role {
   MASTER
+  SINDICO
+  GESTAO
   CONSELHO
 }
 
