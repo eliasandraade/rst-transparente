@@ -100,6 +100,129 @@ model Parecer {
   @@map("pareceres")
 }
 
+// ─── Planilhas para download ──────────────────────────────────────────────────
+
+model PlanilhaDownload {
+  id          String   @id @default(cuid())
+  periodo     String   // "YYYY-MM"
+  arquivoUrl  String
+  arquivoNome String
+  createdAt   DateTime @default(now())
+
+  @@index([periodo])
+  @@map("planilhas_download")
+}
+
+// ─── Avisos e informativos ────────────────────────────────────────────────────
+
+model Aviso {
+  id        String           @id @default(cuid())
+  titulo    String
+  corpo     String           @db.Text
+  fixado    Boolean          @default(false)
+  status    StatusPublicacao @default(RASCUNHO)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([status])
+  @@map("avisos")
+}
+
+// ─── Obras e melhorias (seção Gestão) ────────────────────────────────────────
+
+model Obra {
+  id           String      @id @default(cuid())
+  titulo       String
+  descricao    String?     @db.Text
+  orcamento    Decimal?    @db.Decimal(12, 2)
+  gasto        Decimal?    @db.Decimal(12, 2)
+  status       StatusObra  @default(PLANEJADO)
+  progresso    Int         @default(0)  // 0–100
+  dataInicio   DateTime?   @db.Date
+  dataPrevista DateTime?   @db.Date
+  imagemUrl    String?
+  publicado    Boolean     @default(false)
+  createdAt    DateTime    @default(now())
+  updatedAt    DateTime    @updatedAt
+
+  @@map("obras")
+}
+
+enum StatusObra {
+  PLANEJADO
+  EM_ANDAMENTO
+  CONCLUIDO
+  CANCELADO
+}
+
+// ─── Propostas dos moradores ──────────────────────────────────────────────────
+
+model Proposta {
+  id        String         @id @default(cuid())
+  texto     String         @db.Text
+  nome      String?
+  unidade   String?
+  status    StatusProposta @default(PENDENTE)
+  resposta  String?        @db.Text
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+
+  @@map("propostas")
+}
+
+enum StatusProposta {
+  PENDENTE
+  ANALISANDO
+  RESPONDIDA
+  ARQUIVADA
+}
+
+// ─── Enquetes ─────────────────────────────────────────────────────────────────
+
+model Enquete {
+  id       String           @id @default(cuid())
+  pergunta String
+  tipo     TipoEnquete      @default(UNICA)
+  status   StatusPublicacao @default(RASCUNHO)
+  dataFim  DateTime?
+  opcoes   OpcaoEnquete[]
+  votos    VotoEnquete[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+
+  @@index([status])
+  @@map("enquetes")
+}
+
+enum TipoEnquete {
+  UNICA
+  MULTIPLA
+}
+
+model OpcaoEnquete {
+  id        String        @id @default(cuid())
+  enqueteId String
+  enquete   Enquete       @relation(fields: [enqueteId], references: [id], onDelete: Cascade)
+  texto     String
+  ordem     Int           @default(0)
+  votos     VotoEnquete[]
+
+  @@map("opcoes_enquete")
+}
+
+model VotoEnquete {
+  id        String       @id @default(cuid())
+  enqueteId String
+  enquete   Enquete      @relation(fields: [enqueteId], references: [id], onDelete: Cascade)
+  opcaoId   String
+  opcao     OpcaoEnquete @relation(fields: [opcaoId], references: [id], onDelete: Cascade)
+  ip        String
+  createdAt DateTime     @default(now())
+
+  @@unique([enqueteId, opcaoId, ip])
+  @@map("votos_enquete")
+}
+
 // ─── Configuração do portal ───────────────────────────────────────────────────
 
 model ConfigPortal {

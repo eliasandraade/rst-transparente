@@ -9,7 +9,9 @@ import {
   FileCheck,
   ArrowRight,
   Info,
+  Vote,
 } from "lucide-react";
+import EnqueteCard from "@/components/public/EnqueteCard";
 
 const secoes = [
   {
@@ -41,6 +43,41 @@ const secoes = [
   },
 ];
 
+async function getEnquetesAtivas() {
+  const agora = new Date();
+  const enquetes = await prisma.enquete.findMany({
+    where: {
+      status: "PUBLICADO",
+      OR: [{ dataFim: null }, { dataFim: { gt: agora } }],
+    },
+    include: {
+      opcoes: {
+        orderBy: { ordem: "asc" },
+        include: { votos: true },
+      },
+    },
+    orderBy: { createdAt: "desc" },
+  });
+
+  return enquetes.map((enquete) => {
+    const opcoes = enquete.opcoes.map((o) => ({
+      id: o.id,
+      texto: o.texto,
+      ordem: o.ordem,
+      totalVotos: o.votos.length,
+    }));
+    const totalVotos = opcoes.reduce((acc, o) => acc + o.totalVotos, 0);
+    return {
+      id: enquete.id,
+      pergunta: enquete.pergunta,
+      tipo: enquete.tipo as "UNICA" | "MULTIPLA",
+      dataFim: enquete.dataFim ? enquete.dataFim.toISOString() : null,
+      opcoes,
+      totalVotos,
+    };
+  });
+}
+
 async function getUltimoPeriodo(): Promise<string> {
   const ultimo = await prisma.lancamento.findFirst({
     where: { status: "PUBLICADO" },
@@ -51,7 +88,10 @@ async function getUltimoPeriodo(): Promise<string> {
 }
 
 export default async function HomePage() {
-  const ultimoPeriodo = await getUltimoPeriodo();
+  const [ultimoPeriodo, enquetesAtivas] = await Promise.all([
+    getUltimoPeriodo(),
+    getEnquetesAtivas(),
+  ]);
 
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 py-10 sm:py-16">
@@ -117,6 +157,21 @@ export default async function HomePage() {
           ))}
         </ul>
       </nav>
+
+      {/* Enquetes */}
+      {enquetesAtivas.length > 0 && (
+        <section className="mt-10 sm:mt-14" aria-label="Enquetes">
+          <div className="flex items-center gap-2 mb-5">
+            <Vote className="w-5 h-5 text-primary" aria-hidden="true" />
+            <h2 className="text-xl font-bold text-foreground">Enquetes</h2>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {enquetesAtivas.map((enquete) => (
+              <EnqueteCard key={enquete.id} enquete={enquete} />
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* Aviso institucional */}
       <div className="mt-10 sm:mt-14 border border-border rounded-lg bg-white p-5 text-sm text-muted-foreground text-center">

@@ -9,6 +9,8 @@ const links = [
   { href: "/financeiro", label: "Receitas e Despesas" },
   { href: "/metricas", label: "Métricas" },
   { href: "/parecer", label: "Parecer do Conselho" },
+  { href: "/avisos", label: "Avisos" },
+  { href: "/gestao", label: "Gestão" },
 ];
 
 export default function Navbar() {

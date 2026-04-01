@@ -13,6 +13,11 @@ import {
   Settings,
   Users,
   FileSpreadsheet,
+  Bell,
+  HardHat,
+  MessageSquare,
+  BarChart2,
+  FileDown,
 } from "lucide-react";
 
 const links = [
@@ -20,6 +25,11 @@ const links = [
   { href: "/admin/lancamentos", icone: TrendingUp, label: "Lançamentos" },
   { href: "/admin/pareceres", icone: FileText, label: "Pareceres" },
   { href: "/admin/importar", icone: FileSpreadsheet, label: "Importar Planilha" },
+  { href: "/admin/avisos", icone: Bell, label: "Avisos" },
+  { href: "/admin/obras", icone: HardHat, label: "Obras" },
+  { href: "/admin/propostas", icone: MessageSquare, label: "Propostas" },
+  { href: "/admin/enquetes", icone: BarChart2, label: "Enquetes" },
+  { href: "/admin/planilhas", icone: FileDown, label: "Planilhas" },
 ];
 
 interface AdminNavProps {
