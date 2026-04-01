@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { prisma } from "@/lib/prisma";
 import ParecerForm from "@/components/admin/ParecerForm";
 import Link from "next/link";

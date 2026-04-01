@@ -1,3 +1,5 @@
+export const dynamic = "force-dynamic";
+
 import { prisma } from "@/lib/prisma";
 import { formatarPeriodo } from "@/lib/utils";
 import ParecerCard from "@/components/public/ParecerCard";
