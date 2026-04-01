@@ -48,7 +48,7 @@ export default async function UsuariosPage() {
         <div className="card text-center py-16">
           <p className="text-muted-foreground text-lg mb-2">Nenhum usuário cadastrado ainda.</p>
           <p className="text-sm text-muted-foreground">
-            Clique em "Novo usuário" para adicionar membros da equipe.
+            Clique em &quot;Novo usuário&quot; para adicionar membros da equipe.
           </p>
         </div>
       ) : (

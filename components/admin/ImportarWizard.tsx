@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import Link from "next/link";
 import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Info } from "lucide-react";
 import { formatarMoeda, formatarPeriodo } from "@/lib/utils";
 
@@ -103,7 +104,7 @@ export default function ImportarWizard({ categorias }: Props) {
   function toggleAba(nomAba: string) {
     setAbasSelecionadas((prev) => {
       const next = new Set(prev);
-      next.has(nomAba) ? next.delete(nomAba) : next.add(nomAba);
+      if (next.has(nomAba)) { next.delete(nomAba); } else { next.add(nomAba); }
       return next;
     });
   }
@@ -372,9 +373,9 @@ export default function ImportarWizard({ categorias }: Props) {
         na seção de Lançamentos.
       </p>
       <div className="flex gap-3 justify-center">
-        <a href="/admin/lancamentos" className="btn-primary">
+        <Link href="/admin/lancamentos" className="btn-primary">
           Ir para Lançamentos
-        </a>
+        </Link>
         <button
           onClick={() => { setStep("upload"); setItens([]); setAbas([]); setResultado(null); }}
           className="btn-secondary"
