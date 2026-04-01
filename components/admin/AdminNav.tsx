@@ -12,12 +12,14 @@ import {
   Building2,
   Settings,
   Users,
+  FileSpreadsheet,
 } from "lucide-react";
 
 const links = [
   { href: "/admin/dashboard", icone: LayoutDashboard, label: "Painel" },
   { href: "/admin/lancamentos", icone: TrendingUp, label: "Lançamentos" },
   { href: "/admin/pareceres", icone: FileText, label: "Pareceres" },
+  { href: "/admin/importar", icone: FileSpreadsheet, label: "Importar Planilha" },
 ];
 
 interface AdminNavProps {
