@@ -33,7 +33,7 @@ export default async function AdminLayout({
       {/* Conteúdo principal */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header mobile */}
-        <AdminMobileHeader userName={session.user.name} />
+        <AdminMobileHeader userName={session.user.name} userRole={session.user.role} />
 
         <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-6xl">
           {children}

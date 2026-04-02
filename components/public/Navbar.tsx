@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { LogIn, Menu, X } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const links = [
   { href: "/financeiro", label: "Receitas e Despesas" },
@@ -20,13 +21,14 @@ export default function Navbar() {
   const [menuAberto, setMenuAberto] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 bg-white shadow-sm border-b border-border">
+    <header className="sticky top-0 z-50 bg-white dark:bg-slate-900 shadow-sm border-b border-border">
       {/* Barra de identidade */}
       <div className="bg-primary">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-4">
           <Link
             href="/"
-            className="flex items-center gap-3 min-h-[auto] group"
+            className="flex items-center gap-3 group"
+            style={{ minHeight: "auto" }}
             aria-label="Página inicial — Transparência RST"
           >
             <div className="w-9 h-9 bg-white/20 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -35,7 +37,7 @@ export default function Navbar() {
               </svg>
             </div>
             <div>
-              <div className="font-bold text-white text-base leading-tight tracking-wide group-hover:text-white/90 transition-colors">
+              <div className="font-bold text-white text-base leading-tight tracking-wide">
                 Transparência RST
               </div>
               <div className="text-white/70 text-xs leading-tight hidden sm:block">
@@ -44,19 +46,21 @@ export default function Navbar() {
             </div>
           </Link>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <ThemeToggle className="p-2 rounded-md text-white/80 hover:text-white hover:bg-white/10 transition-colors" style={{ minHeight: "auto" }} />
+
             <Link
               href="/admin/login"
-              className="hidden sm:flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white transition-colors px-3 py-2 rounded-md hover:bg-white/10 min-h-[auto]"
-              aria-label="Entrar na área administrativa"
+              className="hidden sm:flex items-center gap-1.5 text-sm font-medium text-white/80 hover:text-white transition-colors px-3 py-2 rounded-md hover:bg-white/10"
+              style={{ minHeight: "auto" }}
             >
-              <LogIn className="w-4 h-4" aria-hidden="true" />
+              <LogIn className="w-4 h-4" />
               Entrar
             </Link>
 
-            {/* Botão hamburger mobile */}
             <button
-              className="sm:hidden p-2 rounded-md text-white/80 hover:text-white hover:bg-white/10 transition-colors min-h-[auto]"
+              className="sm:hidden p-2 rounded-md text-white/80 hover:text-white hover:bg-white/10 transition-colors"
+              style={{ minHeight: "auto" }}
               onClick={() => setMenuAberto(!menuAberto)}
               aria-label={menuAberto ? "Fechar menu" : "Abrir menu"}
               aria-expanded={menuAberto}
@@ -67,8 +71,8 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Barra de navegação — desktop */}
-      <nav className="hidden sm:block bg-white" aria-label="Navegação principal">
+      {/* Navegação desktop */}
+      <nav className="hidden sm:block bg-white dark:bg-slate-900" aria-label="Navegação principal">
         <div className="max-w-6xl mx-auto px-4 sm:px-6">
           <ul className="flex gap-0.5" role="list">
             {links.map((link) => {
@@ -77,6 +81,7 @@ export default function Navbar() {
                 <li key={link.href}>
                   <Link
                     href={link.href}
+                    style={{ minHeight: "auto" }}
                     className={cn(
                       "inline-flex items-center px-4 py-3 text-sm font-medium border-b-2 transition-colors",
                       ativo
@@ -94,9 +99,9 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Menu mobile expandido */}
+      {/* Menu mobile */}
       {menuAberto && (
-        <nav className="sm:hidden bg-white border-t border-border" aria-label="Navegação mobile">
+        <nav className="sm:hidden bg-white dark:bg-slate-900 border-t border-border" aria-label="Navegação mobile">
           <ul className="flex flex-col py-2" role="list">
             {links.map((link) => {
               const ativo = pathname === link.href || pathname?.startsWith(link.href + "/");
@@ -105,8 +110,9 @@ export default function Navbar() {
                   <Link
                     href={link.href}
                     onClick={() => setMenuAberto(false)}
+                    style={{ minHeight: "auto" }}
                     className={cn(
-                      "flex items-center px-4 py-3 text-sm font-medium transition-colors",
+                      "flex items-center px-5 py-3.5 text-sm font-medium transition-colors",
                       ativo
                         ? "text-primary bg-primary/5 border-l-2 border-primary"
                         : "text-muted-foreground hover:text-foreground hover:bg-muted"
@@ -122,7 +128,8 @@ export default function Navbar() {
               <Link
                 href="/admin/login"
                 onClick={() => setMenuAberto(false)}
-                className="flex items-center gap-2 px-4 py-3 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+                style={{ minHeight: "auto" }}
+                className="flex items-center gap-2 px-5 py-3.5 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
               >
                 <LogIn className="w-4 h-4" />
                 Entrar na área administrativa

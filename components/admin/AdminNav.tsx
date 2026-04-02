@@ -21,6 +21,7 @@ import {
   UserCircle,
   UsersRound,
 } from "lucide-react";
+import ThemeToggle from "@/components/ThemeToggle";
 
 const links = [
   { href: "/admin/dashboard", icone: LayoutDashboard, label: "Painel" },
@@ -43,7 +44,7 @@ export default function AdminNav({ userRole }: AdminNavProps) {
   const pathname = usePathname();
 
   return (
-    <aside className="w-64 min-h-screen bg-white border-r border-border flex flex-col">
+    <aside className="w-64 min-h-screen bg-white dark:bg-slate-900 border-r border-border flex flex-col">
       {/* Logo */}
       <div className="p-6 border-b border-border">
         <div className="flex items-center gap-3">
@@ -124,6 +125,10 @@ export default function AdminNav({ userRole }: AdminNavProps) {
 
       {/* Perfil + Logout */}
       <div className="p-4 border-t border-border space-y-1">
+        <div className="flex items-center justify-between px-3 py-2">
+          <span className="text-xs text-muted-foreground">Aparência</span>
+          <ThemeToggle className="p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted transition-colors" style={{ minHeight: "auto" }} />
+        </div>
         <Link
           href="/admin/perfil"
           className={cn(

@@ -11,6 +11,20 @@
     --border: #E2E8F0;
     --muted: #F1F5F9;
     --muted-foreground: #64748B;
+    --card: #FFFFFF;
+    --card-foreground: #1E293B;
+  }
+
+  .dark {
+    --background: #0F172A;
+    --foreground: #E2E8F0;
+    --primary: #4B8EF0;
+    --primary-foreground: #FFFFFF;
+    --border: #334155;
+    --muted: #1E293B;
+    --muted-foreground: #94A3B8;
+    --card: #1E293B;
+    --card-foreground: #E2E8F0;
   }
 
   * {

@@ -24,9 +24,9 @@ const config: Config = {
           800: "#04164D",
           900: "#020927",
         },
-        background: "#F8FAFC",
-        foreground: "#1E293B",
-        border: "#E2E8F0",
+        background: "var(--background)",
+        foreground: "var(--foreground)",
+        border: "var(--border)",
         success: {
           DEFAULT: "#22C55E",
           foreground: "#FFFFFF",
@@ -43,12 +43,12 @@ const config: Config = {
           light: "#FEF3C7",
         },
         muted: {
-          DEFAULT: "#F1F5F9",
-          foreground: "#64748B",
+          DEFAULT: "var(--muted)",
+          foreground: "var(--muted-foreground)",
         },
         card: {
-          DEFAULT: "#FFFFFF",
-          foreground: "#1E293B",
+          DEFAULT: "var(--card)",
+          foreground: "var(--card-foreground)",
         },
       },
       fontFamily: {
