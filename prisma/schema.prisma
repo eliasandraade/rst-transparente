@@ -23,8 +23,6 @@ model User {
   updatedAt      DateTime       @updatedAt
   demandUpdates  DemandUpdate[]
 
-  demandUpdates  DemandUpdate[]
-
   @@map("users")
 }
 
