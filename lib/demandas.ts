@@ -4,10 +4,9 @@ import bcrypt from "bcryptjs";
 const CHARSET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
 
 export function generateCode(length = 6): string {
-  return Array.from(
-    { length },
-    () => CHARSET[Math.floor(Math.random() * CHARSET.length)]
-  ).join("");
+  const bytes = new Uint32Array(length);
+  crypto.getRandomValues(bytes);
+  return Array.from(bytes, (b) => CHARSET[b % CHARSET.length]).join("");
 }
 
 export function generateProtocol(year: number): string {
@@ -22,7 +21,7 @@ export async function verifyAccessCode(
   input: string,
   hash: string
 ): Promise<boolean> {
-  return bcrypt.compare(input.toUpperCase(), hash);
+  return bcrypt.compare(input, hash);
 }
 
 export function sanitizeText(text: string): string {

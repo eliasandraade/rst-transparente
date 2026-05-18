@@ -57,15 +57,17 @@ export async function PUT(request: Request, { params }: Params) {
     const body = await request.json();
     const { newStatus, message } = UpdateDemandSchema.parse(body);
 
-    const demand = await prisma.demand.findUnique({ where: { id } });
-    if (!demand) {
-      return NextResponse.json({ error: "Demanda não encontrada" }, { status: 404 });
-    }
-
-    const isFinalStatus =
-      newStatus === "RESOLVIDA" || newStatus === "ENCERRADA_SEM_ACAO";
-
     const updated = await prisma.$transaction(async (tx) => {
+      const demand = await tx.demand.findUnique({ where: { id } });
+      if (!demand) return null;
+
+      if (demand.status === "RESOLVIDA" || demand.status === "ENCERRADA_SEM_ACAO") {
+        throw Object.assign(new Error("already_closed"), { code: "ALREADY_CLOSED" });
+      }
+
+      const isFinalStatus =
+        newStatus === "RESOLVIDA" || newStatus === "ENCERRADA_SEM_ACAO";
+
       await tx.demandUpdate.create({
         data: {
           demandId: id,
@@ -85,8 +87,15 @@ export async function PUT(request: Request, { params }: Params) {
       });
     });
 
+    if (!updated) {
+      return NextResponse.json({ error: "Demanda não encontrada" }, { status: 404 });
+    }
+
     return NextResponse.json(updated);
   } catch (err) {
+    if (err instanceof Error && (err as any).code === "ALREADY_CLOSED") {
+      return NextResponse.json({ error: "Esta demanda já está encerrada." }, { status: 409 });
+    }
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues[0].message }, { status: 400 });
     }

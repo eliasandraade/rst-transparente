@@ -3,6 +3,9 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import type { DemandStatus, DemandCategory } from "@prisma/client";
+
+const VALID_STATUSES = ["RECEBIDA", "EM_ANALISE", "EM_ANDAMENTO", "RESOLVIDA", "ENCERRADA_SEM_ACAO"] as const;
+const VALID_CATEGORIES = ["MANUTENCAO", "SEGURANCA", "LIMPEZA", "FINANCEIRO", "BARULHO", "ILUMINACAO", "VAZAMENTO", "SUGESTAO", "RECLAMACAO", "OUTROS"] as const;
 import {
   generateProtocol,
   generateCode,
@@ -115,9 +118,16 @@ export async function GET(request: Request) {
   }
 
   const { searchParams } = new URL(request.url);
-  const status = searchParams.get("status") || undefined;
-  const category = searchParams.get("category") || undefined;
+  const rawStatus = searchParams.get("status");
+  const rawCategory = searchParams.get("category");
   const search = searchParams.get("search") || undefined;
+
+  const status = rawStatus && VALID_STATUSES.includes(rawStatus as DemandStatus)
+    ? (rawStatus as DemandStatus)
+    : undefined;
+  const category = rawCategory && VALID_CATEGORIES.includes(rawCategory as DemandCategory)
+    ? (rawCategory as DemandCategory)
+    : undefined;
 
   try {
     const demands = await prisma.demand.findMany({
