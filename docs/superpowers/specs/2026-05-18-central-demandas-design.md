@@ -158,7 +158,7 @@ function generateProtocol(year: number): string {
 - **Armazenamento:** `bcrypt.hash(plainCode, 10)` no campo `accessCode`
 - **Exibição:** plaintext **apenas uma vez**, na tela de sucesso após criação
 - **Verificação pública:** `bcrypt.compare(inputCode.toUpperCase(), demand.accessCode)`
-- **Jamais recuperável** após a criação — se perdido, o morador deve contatar a portaria
+- **Jamais recuperável** após a criação — se perdido, o morador deve contatar a gestão/síndico
 
 ---
 
@@ -282,6 +282,8 @@ Consulta pública por protocolo + código.
 
 **Campos jamais retornados neste endpoint:** `id`, `requesterName`, `unit`, `email`, `phone`, `accessCode`, `ipAddress`, `userAgent`
 
+**Anexo:** `attachmentUrl` e `attachmentName` **são retornados** — o morador pode visualizar/baixar o próprio arquivo que enviou. São dados que o próprio solicitante submeteu, não dados pessoais de terceiros.
+
 ---
 
 ### Administrativos (requerem sessão autenticada)
@@ -320,14 +322,20 @@ Atualiza status + mensagem em uma única operação.
 ---
 
 #### `POST /api/demandas/[id]/encerrar`
-Encerra demanda com confirmação explícita.
+Encerra demanda com confirmação explícita. O admin escolhe explicitamente o status final.
 
 **Body:**
 ```json
-{ "message": "string (opcional)" }
+{
+  "finalStatus": "RESOLVIDA | ENCERRADA_SEM_ACAO (obrigatório)",
+  "message": "string (opcional)"
+}
 ```
 
-**Comportamento:** equivale ao PUT mas com `newStatus = ENCERRADA_SEM_ACAO` ou `RESOLVIDA`, exige confirmação no frontend, define `closedAt`.
+- `RESOLVIDA`: problema foi tratado e solucionado
+- `ENCERRADA_SEM_ACAO`: demanda recebida mas não será atendida (duplicada, fora de escopo, etc.)
+
+**Comportamento:** valida `finalStatus`, cria `DemandUpdate`, define `demand.status = finalStatus` e `demand.closedAt = now()`. A distinção entre os dois status finais é responsabilidade do admin — o endpoint aceita ambos mas exige escolha explícita (sem default).
 
 ---
 
@@ -379,6 +387,7 @@ Exibe apenas:
 - Categoria
 - Título
 - Descrição
+- Anexo original do solicitante (link/botão de download, se houver)
 - Data de abertura (formato: "18 de maio de 2026")
 - Histórico com linguagem amigável:
   - "Recebida", "Em análise", "Respondida pela gestão", "Resolvida"
