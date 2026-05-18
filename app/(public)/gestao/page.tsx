@@ -2,19 +2,17 @@ export const dynamic = "force-dynamic";
 
 import { prisma } from "@/lib/prisma";
 import { formatarMoeda, formatarData } from "@/lib/utils";
-import PropostaForm from "@/components/public/PropostaForm";
 import type { Metadata } from "next";
 import {
   Building2,
   Wrench,
-  Lightbulb,
   CalendarRange,
 } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Gestão do Condomínio",
   description:
-    "Conheça a equipe de gestão, acompanhe obras e melhorias e envie suas propostas.",
+    "Conheça e acompanhe as obras e melhorias em andamento no condomínio.",
 };
 
 /* ── helpers ─────────────────────────────────────────────────────────────── */
@@ -56,8 +54,7 @@ export default async function GestaoPage() {
             Gestão do Condomínio
           </h1>
           <p className="text-[var(--foreground-muted)] text-sm leading-relaxed mt-2 max-w-lg">
-            Conheça a equipe responsável pela administração, acompanhe obras e
-            melhorias em andamento e envie sugestões à gestão.
+            Conheça e acompanhe as obras e melhorias em andamento no nosso condomínio.
           </p>
         </div>
       </section>
@@ -173,24 +170,6 @@ export default async function GestaoPage() {
               })}
             </div>
           )}
-        </section>
-
-        {/* ── Enviar Proposta ───────────────────────────────────────────── */}
-        <section aria-label="Enviar proposta à gestão">
-          <div className="flex items-center gap-2 mb-6">
-            <Lightbulb className="w-4 h-4 text-[var(--foreground-subtle)] flex-shrink-0" aria-hidden="true" />
-            <h2 className="text-base font-bold text-foreground tracking-tight">
-              Enviar Proposta
-            </h2>
-          </div>
-          <div className="card">
-            <p className="text-sm text-[var(--foreground-muted)] leading-relaxed mb-6">
-              Tem uma sugestão ou ideia para melhorar o condomínio? Envie sua
-              proposta — ela será analisada pela gestão e você receberá um
-              retorno.
-            </p>
-            <PropostaForm />
-          </div>
         </section>
 
       </div>
