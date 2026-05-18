@@ -14,6 +14,9 @@ export const metadata: Metadata = {
     index: true,
     follow: true,
   },
+  other: {
+    generator: "Andrade Systems",
+  },
 };
 
 export default function RootLayout({

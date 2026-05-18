@@ -38,6 +38,12 @@ export default async function AdminLayout({
         <main className="flex-1 p-4 sm:p-6 lg:p-8">
           {children}
         </main>
+        <footer className="px-4 sm:px-6 lg:px-8 py-4 border-t border-border">
+          <p className="text-xs text-muted-foreground">
+            Desenvolvido por{" "}
+            <span className="font-medium">Andrade Systems</span>
+          </p>
+        </footer>
       </div>
     </div>
   );
