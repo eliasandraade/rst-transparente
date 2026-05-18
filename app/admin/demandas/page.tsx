@@ -10,6 +10,9 @@ import type { DemandStatus, DemandCategory } from "@prisma/client";
 
 export const metadata: Metadata = { title: "Central de Demandas" };
 
+const VALID_STATUSES = ["RECEBIDA", "EM_ANALISE", "EM_ANDAMENTO", "RESOLVIDA", "ENCERRADA_SEM_ACAO"] as const;
+const VALID_CATEGORIES = ["MANUTENCAO", "SEGURANCA", "LIMPEZA", "FINANCEIRO", "BARULHO", "ILUMINACAO", "VAZAMENTO", "SUGESTAO", "RECLAMACAO", "OUTROS"] as const;
+
 const STATUS_LABEL: Record<DemandStatus, string> = {
   RECEBIDA: "Recebida",
   EM_ANALISE: "Em análise",
@@ -42,12 +45,14 @@ interface Props {
 }
 
 export default async function AdminDemandasPage({ searchParams }: Props) {
-  const { status, category, search } = await searchParams;
+  const { status: rawStatus, category: rawCategory, search } = await searchParams;
+  const status = rawStatus && VALID_STATUSES.includes(rawStatus as DemandStatus) ? (rawStatus as DemandStatus) : undefined;
+  const category = rawCategory && VALID_CATEGORIES.includes(rawCategory as DemandCategory) ? (rawCategory as DemandCategory) : undefined;
 
   const demands = await prisma.demand.findMany({
     where: {
-      ...(status ? { status: status as DemandStatus } : {}),
-      ...(category ? { category: category as DemandCategory } : {}),
+      ...(status ? { status } : {}),
+      ...(category ? { category } : {}),
       ...(search
         ? {
             OR: [
