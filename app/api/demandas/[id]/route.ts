@@ -57,12 +57,12 @@ export async function PUT(request: Request, { params }: Params) {
     const body = await request.json();
     const { newStatus, message } = UpdateDemandSchema.parse(body);
 
-    const updated = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       const demand = await tx.demand.findUnique({ where: { id } });
-      if (!demand) return null;
+      if (!demand) return { notFound: true as const };
 
       if (demand.status === "RESOLVIDA" || demand.status === "ENCERRADA_SEM_ACAO") {
-        throw Object.assign(new Error("already_closed"), { code: "ALREADY_CLOSED" });
+        return { alreadyClosed: true as const };
       }
 
       const isFinalStatus =
@@ -78,24 +78,26 @@ export async function PUT(request: Request, { params }: Params) {
         },
       });
 
-      return tx.demand.update({
+      const updated = await tx.demand.update({
         where: { id },
         data: {
           status: newStatus,
           closedAt: isFinalStatus ? new Date() : undefined,
         },
       });
+
+      return { updated };
     });
 
-    if (!updated) {
+    if (result.notFound) {
       return NextResponse.json({ error: "Demanda não encontrada" }, { status: 404 });
     }
-
-    return NextResponse.json(updated);
-  } catch (err) {
-    if (err instanceof Error && (err as any).code === "ALREADY_CLOSED") {
+    if (result.alreadyClosed) {
       return NextResponse.json({ error: "Esta demanda já está encerrada." }, { status: 409 });
     }
+
+    return NextResponse.json(result.updated);
+  } catch (err) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues[0].message }, { status: 400 });
     }
