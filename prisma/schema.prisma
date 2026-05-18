@@ -300,7 +300,6 @@ model Demand {
 
   updates        DemandUpdate[]
 
-  @@index([protocol])
   @@index([status])
   @@index([category])
   @@index([createdAt])
@@ -315,7 +314,7 @@ model DemandUpdate {
   newStatus      DemandStatus
   message        String?       @db.Text
   createdById    String?
-  createdBy      User?         @relation(fields: [createdById], references: [id])
+  createdBy      User?         @relation(fields: [createdById], references: [id], onDelete: SetNull)
   createdAt      DateTime      @default(now())
 
   @@index([demandId])
