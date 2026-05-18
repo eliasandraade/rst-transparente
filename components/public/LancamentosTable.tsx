@@ -15,19 +15,22 @@ export default function LancamentosTable({
 }: LancamentosTableProps) {
   const isReceita = tipo === "RECEITA";
   const titulo = isReceita ? "Receitas" : "Despesas";
-  const corTotal = isReceita ? "text-green-700" : "text-red-700";
-  const corBadge = isReceita ? "badge-receita" : "badge-despesa";
+  const corClasse = isReceita ? "text-[var(--success)]" : "text-[var(--danger)]";
+  const corDot = isReceita ? "bg-success" : "bg-danger";
+  const corLabel = isReceita ? "text-success" : "text-danger";
+  const corBadge = isReceita ? "badge badge-success" : "badge badge-danger";
   const Icone = isReceita ? TrendingUp : TrendingDown;
-  const corIcone = isReceita ? "text-green-600" : "text-red-600";
 
   if (lancamentos.length === 0) {
     return (
       <section className="card" aria-label={titulo}>
         <div className="flex items-center gap-2 mb-4">
-          <Icone className={`w-5 h-5 ${corIcone}`} aria-hidden="true" />
-          <h2 className="text-xl font-semibold">{titulo}</h2>
+          <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${corDot}`} aria-hidden="true" />
+          <span className={`text-xs font-semibold uppercase tracking-wider ${corLabel}`}>
+            {titulo}
+          </span>
         </div>
-        <p className="text-muted-foreground text-center py-8">
+        <p className="text-[var(--foreground-muted)] text-sm text-center py-10">
           Nenhum lançamento de {titulo.toLowerCase()} neste período.
         </p>
       </section>
@@ -37,16 +40,26 @@ export default function LancamentosTable({
   return (
     <section className="card" aria-label={titulo}>
       {/* Cabeçalho */}
-      <div className="flex items-center justify-between flex-wrap gap-3 mb-6">
-        <div className="flex items-center gap-2">
-          <Icone className={`w-5 h-5 ${corIcone}`} aria-hidden="true" />
-          <h2 className="text-xl font-semibold">{titulo}</h2>
-          <span className="text-sm text-muted-foreground">
-            ({lancamentos.length} lançamento{lancamentos.length !== 1 ? "s" : ""})
-          </span>
+      <div className="flex items-start justify-between flex-wrap gap-3 mb-6">
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-1.5">
+            <div className={`w-1.5 h-1.5 rounded-full flex-shrink-0 ${corDot}`} aria-hidden="true" />
+            <span className={`text-xs font-semibold uppercase tracking-wider ${corLabel}`}>
+              {titulo}
+            </span>
+          </div>
+          <div className="flex items-center gap-2 pl-3">
+            <Icone className={`w-4 h-4 flex-shrink-0 ${corClasse}`} aria-hidden="true" />
+            <h2 className="text-lg font-bold text-foreground tracking-tight">
+              {titulo} do Período
+            </h2>
+            <span className="text-xs text-[var(--foreground-subtle)] font-normal">
+              {lancamentos.length} lançamento{lancamentos.length !== 1 ? "s" : ""}
+            </span>
+          </div>
         </div>
         <div
-          className={`text-xl font-bold ${corTotal}`}
+          className={`text-xl font-bold tracking-tight tabular-nums ${corClasse}`}
           aria-label={`Total de ${titulo}: ${formatarMoeda(total)}`}
         >
           {formatarMoeda(total)}
@@ -54,25 +67,25 @@ export default function LancamentosTable({
       </div>
 
       {/* Tabela — desktop */}
-      <div className="hidden md:block overflow-x-auto">
+      <div className="hidden md:block overflow-x-auto -mx-6 px-6">
         <table className="w-full text-sm" aria-label={`Tabela de ${titulo}`}>
           <thead>
             <tr className="border-b border-border">
-              <th className="text-left py-3 px-2 font-medium text-muted-foreground">
+              <th className="text-left pb-3 px-2 text-xs font-semibold uppercase tracking-wider text-[var(--foreground-subtle)]">
                 Data
               </th>
-              <th className="text-left py-3 px-2 font-medium text-muted-foreground">
+              <th className="text-left pb-3 px-2 text-xs font-semibold uppercase tracking-wider text-[var(--foreground-subtle)]">
                 Descrição
               </th>
-              <th className="text-left py-3 px-2 font-medium text-muted-foreground">
+              <th className="text-left pb-3 px-2 text-xs font-semibold uppercase tracking-wider text-[var(--foreground-subtle)]">
                 Categoria
               </th>
               {!isReceita && (
-                <th className="text-left py-3 px-2 font-medium text-muted-foreground">
+                <th className="text-left pb-3 px-2 text-xs font-semibold uppercase tracking-wider text-[var(--foreground-subtle)]">
                   Fornecedor
                 </th>
               )}
-              <th className="text-right py-3 px-2 font-medium text-muted-foreground">
+              <th className="text-right pb-3 px-2 text-xs font-semibold uppercase tracking-wider text-[var(--foreground-subtle)]">
                 Valor
               </th>
             </tr>
@@ -81,27 +94,26 @@ export default function LancamentosTable({
             {lancamentos.map((l) => (
               <tr
                 key={l.id}
-                className="border-b border-border/50 hover:bg-muted/30 transition-colors"
+                className="border-b border-border/50 hover:bg-[var(--surface-raised)] transition-colors duration-100"
               >
-                <td className="py-3 px-2 text-muted-foreground whitespace-nowrap">
+                <td className="py-3 px-2 text-[var(--foreground-subtle)] whitespace-nowrap tabular-nums text-xs">
                   {formatarData(l.data)}
                 </td>
-                <td className="py-3 px-2 font-medium">{l.descricao}</td>
+                <td className="py-3 px-2 font-medium text-foreground text-sm">
+                  {l.descricao}
+                </td>
                 <td className="py-3 px-2">
-                  <span
-                    className={corBadge}
-                    style={{ borderColor: l.categoria.cor }}
-                  >
+                  <span className={corBadge}>
                     {l.categoria.nome}
                   </span>
                 </td>
                 {!isReceita && (
-                  <td className="py-3 px-2 text-muted-foreground">
-                    {l.fornecedor ?? "—"}
+                  <td className="py-3 px-2 text-[var(--foreground-muted)] text-sm">
+                    {l.fornecedor ?? <span className="text-[var(--foreground-subtle)]">—</span>}
                   </td>
                 )}
                 <td
-                  className={`py-3 px-2 text-right font-semibold ${corTotal}`}
+                  className={`py-3 px-2 text-right font-semibold tabular-nums ${corClasse}`}
                 >
                   {formatarMoeda(l.valor)}
                 </td>
@@ -109,15 +121,15 @@ export default function LancamentosTable({
             ))}
           </tbody>
           <tfoot>
-            <tr className="bg-muted/30">
+            <tr className="bg-[var(--surface-raised)]">
               <td
                 colSpan={isReceita ? 3 : 4}
-                className="py-3 px-2 font-semibold text-right"
+                className="py-3 px-2 text-sm font-semibold text-[var(--foreground-muted)] text-right"
               >
                 Total de {titulo}
               </td>
               <td
-                className={`py-3 px-2 text-right font-bold text-lg ${corTotal}`}
+                className={`py-3 px-2 text-right font-bold text-base tabular-nums ${corClasse}`}
               >
                 {formatarMoeda(total)}
               </td>
@@ -127,42 +139,49 @@ export default function LancamentosTable({
       </div>
 
       {/* Cards — mobile */}
-      <div className="md:hidden space-y-3">
+      <div className="md:hidden space-y-2">
         {lancamentos.map((l) => (
           <div
             key={l.id}
-            className="border border-border rounded-lg p-4 space-y-2"
+            className="border border-border rounded-lg p-4"
           >
-            <div className="flex items-start justify-between gap-2">
-              <span className="font-medium text-base">{l.descricao}</span>
-              <span className={`font-bold text-base flex-shrink-0 ${corTotal}`}>
+            <div className="flex items-start justify-between gap-3 mb-2">
+              <span className="font-medium text-sm text-foreground leading-snug">
+                {l.descricao}
+              </span>
+              <span
+                className={`font-bold text-sm flex-shrink-0 tabular-nums ${corClasse}`}
+              >
                 {formatarMoeda(l.valor)}
               </span>
             </div>
-            <div className="flex items-center gap-2 flex-wrap text-sm text-muted-foreground">
-              <span>{formatarData(l.data)}</span>
-              <span>•</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs text-[var(--foreground-subtle)] tabular-nums">
+                {formatarData(l.data)}
+              </span>
+              <span className="text-[var(--border-strong)]" aria-hidden="true">·</span>
               <span className={corBadge}>{l.categoria.nome}</span>
               {!isReceita && l.fornecedor && (
                 <>
-                  <span>•</span>
-                  <span>{l.fornecedor}</span>
+                  <span className="text-[var(--border-strong)]" aria-hidden="true">·</span>
+                  <span className="text-xs text-[var(--foreground-muted)]">{l.fornecedor}</span>
                 </>
               )}
             </div>
             {l.observacoes && (
-              <p className="text-sm text-muted-foreground italic">
+              <p className="text-xs text-[var(--foreground-subtle)] mt-2 leading-relaxed">
                 {l.observacoes}
               </p>
             )}
           </div>
         ))}
+
         {/* Total mobile */}
         <div
-          className={`border-t-2 border-border pt-3 flex justify-between items-center font-bold ${corTotal}`}
+          className={`pt-3 mt-1 border-t border-border flex justify-between items-center font-bold ${corClasse}`}
         >
-          <span>Total de {titulo}</span>
-          <span className="text-lg">{formatarMoeda(total)}</span>
+          <span className="text-sm">Total de {titulo}</span>
+          <span className="text-base tabular-nums">{formatarMoeda(total)}</span>
         </div>
       </div>
     </section>

@@ -50,6 +50,27 @@ export function periodoAtual(): string {
   return `${ano}-${mes}`;
 }
 
+export function formatarDataExtenso(data: Date | string): string {
+  const d = typeof data === "string" ? new Date(data) : data;
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "America/Sao_Paulo",
+  }).format(d);
+}
+
+export function formatarDataHoraAmigavel(data: Date | string): string {
+  const d = typeof data === "string" ? new Date(data) : data;
+  return new Intl.DateTimeFormat("pt-BR", {
+    day: "numeric",
+    month: "long",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "America/Sao_Paulo",
+  }).format(d);
+}
+
 export function gerarPeriodos(quantidadeMeses: number = 12): string[] {
   const periodos: string[] = [];
   const agora = new Date();

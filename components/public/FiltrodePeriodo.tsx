@@ -26,19 +26,19 @@ export default function FiltroPeriodo({
   }
 
   return (
-    <div className="flex items-center gap-3 flex-wrap">
+    <div className="flex items-center gap-2.5 flex-wrap">
       <label
         htmlFor="filtro-periodo"
-        className="flex items-center gap-2 text-sm font-medium text-muted-foreground"
+        className="flex items-center gap-1.5 text-xs font-medium text-[var(--foreground-muted)] whitespace-nowrap"
       >
-        <CalendarDays className="w-4 h-4" aria-hidden="true" />
-        Período:
+        <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
+        Período
       </label>
       <select
         id="filtro-periodo"
         value={periodoAtivo}
         onChange={handleChange}
-        className="input w-auto min-w-[180px] cursor-pointer"
+        className="select w-auto min-w-[180px] cursor-pointer text-sm"
         aria-label="Selecionar período para filtrar dados"
       >
         {periodos.map((p) => (

@@ -9,7 +9,7 @@ import GraficoEvolucao from "@/components/public/GraficoEvolucao";
 import FiltroPeriodo from "@/components/public/FiltrodePeriodo";
 import type { MetricasPeriodo } from "@/types";
 import type { Metadata } from "next";
-import { TrendingUp, TrendingDown, Scale, BarChart3 } from "lucide-react";
+import { TrendingUp, TrendingDown, Scale, BarChart3, CalendarDays } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Painel de Métricas",
@@ -33,7 +33,6 @@ async function getMetricas(periodo: string): Promise<MetricasPeriodo> {
   const receitaTotal = receitas.reduce((acc, l) => acc + Number(l.valor), 0);
   const despesaTotal = despesas.reduce((acc, l) => acc + Number(l.valor), 0);
 
-  // Despesas por categoria
   const porCategoria = new Map<
     string,
     { nome: string; cor: string; total: number }
@@ -61,7 +60,6 @@ async function getMetricas(periodo: string): Promise<MetricasPeriodo> {
     }))
     .sort((a, b) => b.total - a.total);
 
-  // Evolução dos últimos 6 meses
   const [ano, mes] = periodo.split("-").map(Number);
   const periodosUltimos6: string[] = [];
   for (let i = 5; i >= 0; i--) {
@@ -87,7 +85,6 @@ async function getMetricas(periodo: string): Promise<MetricasPeriodo> {
     return { periodo: p, receita, despesa, saldo: receita - despesa };
   });
 
-  // Períodos disponíveis para o filtro
   return {
     periodo,
     receitaTotal,
@@ -118,100 +115,156 @@ export default async function MetricasPage({ searchParams }: Props) {
     })
     .then((r) => r.map((p) => p.periodo));
 
-  const temDados =
-    metricas.receitaTotal > 0 || metricas.despesaTotal > 0;
+  const temDados = metricas.receitaTotal > 0 || metricas.despesaTotal > 0;
+  const saldoPositivo = metricas.saldo >= 0;
+  const comprometimento =
+    metricas.receitaTotal > 0
+      ? (metricas.despesaTotal / metricas.receitaTotal) * 100
+      : 0;
 
   return (
-    <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8">
-      {/* Cabeçalho */}
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Painel de Métricas</h1>
-        <p className="text-muted-foreground text-lg">
-          Resumo visual da saúde financeira do condomínio.
-        </p>
-      </div>
+    <div className="animate-page-enter">
 
-      {/* Filtro */}
-      <div className="card mb-6">
-        <Suspense fallback={null}>
-          <FiltroPeriodo
-            periodoAtivo={periodo}
-            periodosDisponiveis={periodosDisponiveis}
-          />
-        </Suspense>
-      </div>
-
-      {!temDados ? (
-        <div className="card text-center py-16">
-          <BarChart3 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground text-lg mb-2">
-            Nenhum dado publicado para {formatarPeriodo(periodo)}.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Tente selecionar outro período no filtro acima.
-          </p>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {/* KPIs */}
-          <section aria-label={`Indicadores financeiros de ${formatarPeriodo(periodo)}`}>
-            <h2 className="text-xl font-semibold mb-4">
-              Indicadores — {formatarPeriodo(periodo)}
-            </h2>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <KPICard
-                titulo="Receita Total"
-                valor={metricas.receitaTotal}
-                icone={TrendingUp}
-                variante="receita"
-                descricao="Total de entradas no período"
-              />
-              <KPICard
-                titulo="Despesa Total"
-                valor={metricas.despesaTotal}
-                icone={TrendingDown}
-                variante="despesa"
-                descricao="Total de saídas no período"
-              />
-              <KPICard
-                titulo="Saldo do Período"
-                valor={metricas.saldo}
-                icone={Scale}
-                variante={metricas.saldo >= 0 ? "saldo" : "despesa"}
-                descricao={
-                  metricas.saldo >= 0
-                    ? "Resultado positivo"
-                    : "Resultado negativo"
-                }
-              />
-            </div>
-          </section>
-
-          {/* Gráfico por categoria */}
-          {metricas.despesasPorCategoria.length > 0 && (
-            <section className="card" aria-label="Despesas por categoria">
-              <h2 className="text-xl font-semibold mb-1">
-                Despesas por Categoria
-              </h2>
-              <p className="text-sm text-muted-foreground mb-5">
-                Distribuição das despesas de {formatarPeriodo(periodo)} por
-                categoria. Total:{" "}
-                <strong>{formatarMoeda(metricas.despesaTotal)}</strong>
+      {/* ── Hero ──────────────────────────────────────────────────────── */}
+      <section className="bg-surface border-b border-border">
+        <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+          <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-5">
+            <div>
+              <div className="flex items-center gap-1.5 mb-3">
+                <div className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" aria-hidden="true" />
+                <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+                  Métricas
+                </span>
+              </div>
+              <h1 className="text-2xl sm:text-[1.875rem] font-bold text-foreground tracking-tight leading-tight">
+                Painel de Métricas
+              </h1>
+              <p className="text-[var(--foreground-muted)] text-sm leading-relaxed mt-2 max-w-lg">
+                Resumo visual da saúde financeira do condomínio por período.
               </p>
-              <GraficoCategoria dados={metricas.despesasPorCategoria} />
-            </section>
-          )}
+            </div>
 
-          {/* Evolução mensal */}
-          <section className="card" aria-label="Evolução financeira mensal">
-            <h2 className="text-xl font-semibold mb-1">Evolução Mensal</h2>
-            <p className="text-sm text-muted-foreground mb-5">
-              Comparativo de receitas e despesas nos últimos 6 meses.
-            </p>
-            <GraficoEvolucao dados={metricas.evolucaoMensal} />
-          </section>
+            {/* Filtro de período */}
+            <div className="flex-shrink-0">
+              <Suspense fallback={null}>
+                <FiltroPeriodo
+                  periodoAtivo={periodo}
+                  periodosDisponiveis={periodosDisponiveis}
+                />
+              </Suspense>
+            </div>
+          </div>
         </div>
-      )}
+      </section>
+
+      {/* ── Conteúdo ──────────────────────────────────────────────────── */}
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-8">
+
+        {!temDados ? (
+          <div className="card text-center py-16">
+            <div className="w-12 h-12 rounded-xl bg-[var(--surface-raised)] flex items-center justify-center mx-auto mb-4">
+              <BarChart3 className="w-6 h-6 text-[var(--foreground-subtle)]" aria-hidden="true" />
+            </div>
+            <p className="text-[var(--foreground-muted)] text-base mb-1.5">
+              Nenhum dado publicado para {formatarPeriodo(periodo)}.
+            </p>
+            <p className="text-sm text-[var(--foreground-subtle)]">
+              Selecione outro período no filtro acima.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* ── KPIs ────────────────────────────────────────────────── */}
+            <section aria-label={`Indicadores financeiros de ${formatarPeriodo(periodo)}`}>
+              <div className="flex items-center justify-between flex-wrap gap-2 mb-4">
+                <div className="flex items-center gap-1.5 text-xs text-[var(--foreground-subtle)]">
+                  <CalendarDays className="w-3.5 h-3.5 flex-shrink-0" aria-hidden="true" />
+                  <span>
+                    Período:{" "}
+                    <strong className="text-foreground font-semibold">
+                      {formatarPeriodo(periodo)}
+                    </strong>
+                  </span>
+                </div>
+                {temDados && (
+                  <span className="text-xs text-[var(--foreground-subtle)] tabular-nums">
+                    {comprometimento.toFixed(1)}% das receitas comprometidas com despesas
+                  </span>
+                )}
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <KPICard
+                  titulo="Receita Total"
+                  valor={metricas.receitaTotal}
+                  icone={TrendingUp}
+                  variante="receita"
+                  descricao="Total de entradas no período"
+                />
+                <KPICard
+                  titulo="Despesa Total"
+                  valor={metricas.despesaTotal}
+                  icone={TrendingDown}
+                  variante="despesa"
+                  descricao="Total de saídas no período"
+                />
+                <KPICard
+                  titulo="Saldo do Período"
+                  valor={metricas.saldo}
+                  icone={Scale}
+                  variante={saldoPositivo ? "saldo" : "despesa"}
+                  descricao={saldoPositivo ? "Resultado positivo" : "Resultado negativo"}
+                />
+              </div>
+            </section>
+
+            {/* ── Despesas por Categoria ──────────────────────────────── */}
+            {metricas.despesasPorCategoria.length > 0 && (
+              <section className="card" aria-label="Despesas por categoria">
+                <div className="mb-6">
+                  <div className="flex items-center gap-1.5 mb-2">
+                    <div className="w-1.5 h-1.5 rounded-full bg-danger flex-shrink-0" aria-hidden="true" />
+                    <span className="text-xs font-semibold uppercase tracking-wider text-danger">
+                      Despesas
+                    </span>
+                  </div>
+                  <div className="flex items-start justify-between gap-3 flex-wrap">
+                    <h2 className="text-lg font-bold text-foreground tracking-tight">
+                      Distribuição por Categoria
+                    </h2>
+                    <span className="text-sm font-semibold text-[var(--danger)] tabular-nums">
+                      {formatarMoeda(metricas.despesaTotal)}
+                    </span>
+                  </div>
+                  <p className="text-xs text-[var(--foreground-muted)] mt-1">
+                    {metricas.despesasPorCategoria.length} categorias em {formatarPeriodo(periodo)}
+                  </p>
+                </div>
+                <GraficoCategoria dados={metricas.despesasPorCategoria} />
+              </section>
+            )}
+
+            {/* ── Evolução Mensal ─────────────────────────────────────── */}
+            <section className="card" aria-label="Evolução financeira mensal">
+              <div className="mb-6">
+                <div className="flex items-center gap-1.5 mb-2">
+                  <div className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0" aria-hidden="true" />
+                  <span className="text-xs font-semibold uppercase tracking-wider text-primary">
+                    Histórico
+                  </span>
+                </div>
+                <h2 className="text-lg font-bold text-foreground tracking-tight">
+                  Evolução Mensal
+                </h2>
+                <p className="text-xs text-[var(--foreground-muted)] mt-1">
+                  Comparativo de receitas e despesas nos últimos 6 meses
+                </p>
+              </div>
+              <GraficoEvolucao dados={metricas.evolucaoMensal} />
+            </section>
+          </>
+        )}
+
+      </div>
     </div>
   );
 }

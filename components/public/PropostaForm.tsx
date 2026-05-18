@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
+import { Loader2, AlertCircle, CheckCircle2, Send } from "lucide-react";
 
 export default function PropostaForm() {
   const [texto, setTexto] = useState("");
@@ -51,15 +51,17 @@ export default function PropostaForm() {
 
   if (sucesso) {
     return (
-      <div className="card text-center py-8 space-y-3">
-        <CheckCircle2 className="w-10 h-10 text-green-600 mx-auto" />
-        <h3 className="font-semibold text-lg">Proposta enviada!</h3>
-        <p className="text-muted-foreground text-sm">
+      <div className="text-center py-8 space-y-3">
+        <div className="w-12 h-12 rounded-xl bg-[var(--success-subtle)] flex items-center justify-center mx-auto">
+          <CheckCircle2 className="w-6 h-6 text-[var(--success)]" aria-hidden="true" />
+        </div>
+        <h3 className="font-semibold text-base text-foreground">Proposta enviada!</h3>
+        <p className="text-sm text-[var(--foreground-muted)] max-w-sm mx-auto">
           Sua proposta foi recebida e será analisada pela gestão do condomínio.
         </p>
         <button
           onClick={() => setSucesso(false)}
-          className="btn-secondary mt-2"
+          className="btn btn-secondary mt-2"
         >
           Enviar outra proposta
         </button>
@@ -70,71 +72,104 @@ export default function PropostaForm() {
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
       {erro && (
-        <div role="alert" className="flex items-start gap-3 bg-danger-light border border-danger/30 rounded-lg p-4">
-          <AlertCircle className="w-5 h-5 text-danger flex-shrink-0 mt-0.5" />
-          <p className="text-sm text-red-800">{erro}</p>
+        <div
+          role="alert"
+          className="flex items-start gap-3 bg-[var(--danger-subtle)] border border-border rounded-lg p-4"
+        >
+          <AlertCircle className="w-4 h-4 text-[var(--danger)] flex-shrink-0 mt-0.5" aria-hidden="true" />
+          <p className="text-sm text-[var(--danger)]">{erro}</p>
         </div>
       )}
 
       <div>
-        <div className="flex justify-between items-end mb-1">
-          <label htmlFor="texto" className="label">Sua proposta *</label>
-          <span className={`text-xs ${texto.length > MAX_TEXTO ? "text-danger" : "text-muted-foreground"}`}>
+        <div className="flex justify-between items-end mb-1.5">
+          <label htmlFor="proposta-texto" className="label">
+            Sua proposta <span className="text-[var(--danger)]" aria-hidden="true">*</span>
+          </label>
+          <span
+            className={`text-xs tabular-nums ${
+              texto.length > MAX_TEXTO
+                ? "text-[var(--danger)]"
+                : "text-[var(--foreground-subtle)]"
+            }`}
+            aria-live="polite"
+          >
             {texto.length}/{MAX_TEXTO}
           </span>
         </div>
         <textarea
-          id="texto"
+          id="proposta-texto"
           value={texto}
           onChange={(e) => setTexto(e.target.value)}
-          className="input min-h-[120px] resize-y"
-          placeholder="Descreva sua proposta, sugestão ou ideia para o condomínio..."
+          className="textarea"
+          placeholder="Descreva sua proposta, sugestão ou ideia para melhorar o condomínio..."
           maxLength={MAX_TEXTO}
           rows={5}
           required
           minLength={10}
         />
-        <p className="text-xs text-muted-foreground mt-1">Mínimo de 10 caracteres.</p>
+        <p className="text-xs text-[var(--foreground-subtle)] mt-1">
+          Mínimo de 10 caracteres.
+        </p>
       </div>
 
       <div className="grid sm:grid-cols-2 gap-4">
         <div>
-          <label htmlFor="nome" className="label">
-            Nome <span className="text-muted-foreground font-normal">(opcional)</span>
+          <label htmlFor="proposta-nome" className="label">
+            Nome{" "}
+            <span className="text-[var(--foreground-subtle)] font-normal">(opcional)</span>
           </label>
           <input
-            id="nome"
+            id="proposta-nome"
             type="text"
             value={nome}
             onChange={(e) => setNome(e.target.value)}
             className="input"
-            placeholder="Seu nome (opcional)"
+            placeholder="Seu nome"
             maxLength={100}
           />
         </div>
         <div>
-          <label htmlFor="unidade" className="label">
-            Unidade <span className="text-muted-foreground font-normal">(opcional)</span>
+          <label htmlFor="proposta-unidade" className="label">
+            Unidade{" "}
+            <span className="text-[var(--foreground-subtle)] font-normal">(opcional)</span>
           </label>
           <input
-            id="unidade"
+            id="proposta-unidade"
             type="text"
             value={unidade}
             onChange={(e) => setUnidade(e.target.value)}
             className="input"
-            placeholder="Apartamento/unidade (opcional)"
+            placeholder="Apartamento / unidade"
             maxLength={20}
           />
         </div>
       </div>
 
-      <button type="submit" className="btn-primary w-full sm:w-auto" disabled={carregando}>
-        {carregando ? (
-          <><Loader2 className="w-4 h-4 animate-spin" /> Enviando...</>
-        ) : (
-          "Enviar proposta"
+      <div className="flex items-center gap-3 pt-1">
+        <button
+          type="submit"
+          className="btn btn-primary"
+          disabled={carregando || texto.trim().length < 10}
+        >
+          {carregando ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />
+              Enviando...
+            </>
+          ) : (
+            <>
+              <Send className="w-4 h-4" aria-hidden="true" />
+              Enviar proposta
+            </>
+          )}
+        </button>
+        {!carregando && texto.trim().length > 0 && texto.trim().length < 10 && (
+          <span className="text-xs text-[var(--foreground-subtle)]">
+            {10 - texto.trim().length} caractere{10 - texto.trim().length !== 1 ? "s" : ""} restante{10 - texto.trim().length !== 1 ? "s" : ""}
+          </span>
         )}
-      </button>
+      </div>
     </form>
   );
 }

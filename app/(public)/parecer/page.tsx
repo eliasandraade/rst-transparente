@@ -1,11 +1,11 @@
 export const dynamic = "force-dynamic";
 
 import { prisma } from "@/lib/prisma";
-import { formatarPeriodo } from "@/lib/utils";
+
 import ParecerCard from "@/components/public/ParecerCard";
 import type { ParecerPublico } from "@/types";
 import type { Metadata } from "next";
-import { FileCheck, FileX } from "lucide-react";
+import { FileCheck, FileX, Clock } from "lucide-react";
 
 export const metadata: Metadata = {
   title: "Parecer do Conselho Fiscal",
@@ -36,89 +36,94 @@ export default async function ParecerPage() {
   const [parecerAtual, ...historico] = pareceres;
 
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-      {/* Cabeçalho */}
-      <div className="mb-8">
-        <div className="flex items-center gap-3 mb-2">
-          <FileCheck className="w-8 h-8 text-primary" aria-hidden="true" />
-          <h1 className="text-3xl font-bold">Parecer do Conselho Fiscal</h1>
-        </div>
-        <p className="text-muted-foreground text-lg">
-          Documentos oficiais emitidos pelo Conselho Fiscal do condomínio.
-        </p>
-      </div>
+    <div className="animate-page-enter">
 
-      {pareceres.length === 0 ? (
-        <div className="card text-center py-16">
-          <FileX className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-          <p className="text-muted-foreground text-lg mb-2">
-            Nenhum parecer publicado ainda.
-          </p>
-          <p className="text-sm text-muted-foreground">
-            Os pareceres do Conselho Fiscal serão publicados aqui quando
-            disponíveis.
+      {/* ── Hero ──────────────────────────────────────────────────────── */}
+      <section className="bg-surface border-b border-border">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 sm:py-10">
+          <div className="flex items-center gap-1.5 mb-3">
+            <div className="w-1.5 h-1.5 rounded-full bg-warning flex-shrink-0" aria-hidden="true" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-warning">
+              Conselho Fiscal
+            </span>
+          </div>
+          <h1 className="text-2xl sm:text-[1.875rem] font-bold text-foreground tracking-tight leading-tight">
+            Parecer Oficial
+          </h1>
+          <p className="text-[var(--foreground-muted)] text-sm leading-relaxed mt-2 max-w-lg">
+            Documentos oficiais emitidos pelo Conselho Fiscal do condomínio,
+            com análise das contas e recomendação formal.
           </p>
         </div>
-      ) : (
-        <div className="space-y-8">
-          {/* Parecer atual em destaque */}
-          {parecerAtual && (
-            <section aria-label="Parecer mais recente">
-              <ParecerCard parecer={parecerAtual} destaque />
-            </section>
-          )}
+      </section>
 
-          {/* Histórico */}
-          {historico.length > 0 && (
-            <section aria-label="Histórico de pareceres">
-              <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
-                Pareceres Anteriores
-                <span className="text-sm font-normal text-muted-foreground">
-                  ({historico.length})
-                </span>
-              </h2>
+      {/* ── Conteúdo ──────────────────────────────────────────────────── */}
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8 space-y-8">
 
-              {/* Lista resumida */}
-              <div className="card">
-                <ul className="divide-y divide-border" role="list">
+        {pareceres.length === 0 ? (
+          <div className="card text-center py-16">
+            <div
+              className="w-12 h-12 rounded-xl bg-[var(--surface-raised)] flex items-center justify-center mx-auto mb-4"
+              aria-hidden="true"
+            >
+              <FileX className="w-6 h-6 text-[var(--foreground-subtle)]" />
+            </div>
+            <p className="text-[var(--foreground-muted)] text-base mb-1.5">
+              Nenhum parecer publicado ainda.
+            </p>
+            <p className="text-sm text-[var(--foreground-subtle)]">
+              Os pareceres do Conselho Fiscal serão publicados aqui quando
+              disponíveis.
+            </p>
+          </div>
+        ) : (
+          <>
+            {/* Parecer atual em destaque */}
+            {parecerAtual && (
+              <section aria-label="Parecer mais recente">
+                <ParecerCard parecer={parecerAtual} destaque />
+              </section>
+            )}
+
+            {/* Histórico */}
+            {historico.length > 0 && (
+              <section aria-label="Histórico de pareceres">
+                <div className="flex items-center gap-2 mb-4">
+                  <Clock className="w-4 h-4 text-[var(--foreground-subtle)] flex-shrink-0" aria-hidden="true" />
+                  <h2 className="text-base font-bold text-foreground tracking-tight">
+                    Pareceres Anteriores
+                  </h2>
+                  <span className="badge badge-neutral ml-0.5">
+                    {historico.length}
+                  </span>
+                </div>
+
+                <div className="card divide-y divide-border" role="list">
                   {historico.map((p) => (
-                    <li
-                      key={p.id}
-                      className="py-4 flex items-center justify-between gap-4 flex-wrap"
-                    >
-                      <div>
-                        <p className="font-medium">{p.titulo}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {formatarPeriodo(p.periodoRef)}
-                        </p>
-                      </div>
-                      {p.arquivoUrl && (
-                        <a
-                          href={p.arquivoUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          download={p.arquivoNome ?? "parecer.pdf"}
-                          className="btn-secondary text-sm flex-shrink-0"
-                          aria-label={`Baixar parecer de ${formatarPeriodo(p.periodoRef)}`}
-                        >
-                          Baixar PDF
-                        </a>
-                      )}
-                    </li>
+                    <div key={p.id} role="listitem">
+                      <ParecerCard parecer={p} />
+                    </div>
                   ))}
-                </ul>
-              </div>
-            </section>
-          )}
-        </div>
-      )}
+                </div>
+              </section>
+            )}
+          </>
+        )}
 
-      {/* Informação institucional */}
-      <div className="mt-10 text-sm text-muted-foreground text-center border border-border rounded-lg p-4 bg-white">
-        <p>
-          O Conselho Fiscal é responsável pela análise das contas do condomínio
-          e pela emissão de pareceres nos termos da convenção condominial.
-        </p>
+        {/* Nota institucional */}
+        <div className="flex items-start gap-3 bg-[var(--warning-subtle)] border border-[var(--border)] rounded-lg px-4 py-3.5">
+          <FileCheck
+            className="w-4 h-4 text-warning flex-shrink-0 mt-0.5"
+            aria-hidden="true"
+          />
+          <p className="text-xs text-[var(--foreground-muted)] leading-relaxed">
+            O Conselho Fiscal é responsável pela análise das contas do
+            condomínio e pela emissão de pareceres nos termos da convenção
+            condominial. Os documentos publicados aqui são oficiais e têm
+            validade formal.
+          </p>
+        </div>
+
       </div>
     </div>
   );
