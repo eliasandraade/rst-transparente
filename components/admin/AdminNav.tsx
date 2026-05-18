@@ -20,6 +20,7 @@ import {
   FileDown,
   UserCircle,
   UsersRound,
+  ClipboardList,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -31,6 +32,7 @@ const links = [
   { href: "/admin/avisos", icone: Bell, label: "Avisos" },
   { href: "/admin/obras", icone: HardHat, label: "Obras" },
   { href: "/admin/propostas", icone: MessageSquare, label: "Propostas" },
+  { href: "/admin/demandas", icone: ClipboardList, label: "Demandas" },
   { href: "/admin/enquetes", icone: BarChart2, label: "Enquetes" },
   { href: "/admin/planilhas", icone: FileDown, label: "Planilhas" },
   { href: "/admin/membros", icone: UsersRound, label: "Quem Somos" },

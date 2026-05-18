@@ -13,6 +13,7 @@ const links = [
   { href: "/parecer", label: "Parecer" },
   { href: "/avisos", label: "Avisos" },
   { href: "/gestao", label: "Gestão" },
+  { href: "/demandas", label: "Central de Demandas" },
   { href: "/quem-somos", label: "Quem Somos" },
 ];
 

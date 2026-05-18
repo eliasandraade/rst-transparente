@@ -22,6 +22,8 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  demandUpdates  DemandUpdate[]
+
   @@map("users")
 }
 
@@ -251,4 +253,70 @@ model ConfigPortal {
   updatedAt      DateTime @updatedAt
 
   @@map("config_portal")
+}
+
+// ─── Central de Demandas ──────────────────────────────────────────────────────
+
+enum DemandCategory {
+  MANUTENCAO
+  SEGURANCA
+  LIMPEZA
+  FINANCEIRO
+  BARULHO
+  ILUMINACAO
+  VAZAMENTO
+  SUGESTAO
+  RECLAMACAO
+  OUTROS
+}
+
+enum DemandStatus {
+  RECEBIDA
+  EM_ANALISE
+  EM_ANDAMENTO
+  RESOLVIDA
+  ENCERRADA_SEM_ACAO
+}
+
+model Demand {
+  id             String         @id @default(cuid())
+  protocol       String         @unique
+  accessCode     String
+  requesterName  String
+  unit           String
+  email          String?
+  phone          String
+  ipAddress      String?
+  userAgent      String?
+  category       DemandCategory
+  title          String
+  description    String         @db.Text
+  attachmentUrl  String?
+  attachmentName String?
+  status         DemandStatus   @default(RECEBIDA)
+  closedAt       DateTime?
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  updates        DemandUpdate[]
+
+  @@index([status])
+  @@index([category])
+  @@index([createdAt])
+  @@map("demands")
+}
+
+model DemandUpdate {
+  id             String        @id @default(cuid())
+  demandId       String
+  demand         Demand        @relation(fields: [demandId], references: [id], onDelete: Cascade)
+  previousStatus DemandStatus?
+  newStatus      DemandStatus
+  message        String?       @db.Text
+  createdById    String?
+  createdBy      User?         @relation(fields: [createdById], references: [id], onDelete: SetNull)
+  createdAt      DateTime      @default(now())
+
+  @@index([demandId])
+  @@map("demand_updates")
 }

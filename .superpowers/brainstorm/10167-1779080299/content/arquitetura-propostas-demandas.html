@@ -1,0 +1,109 @@
+<h2>Propostas vs. Central de Demandas — Escolha arquitetural</h2>
+<p class="subtitle">O projeto já tem um módulo de Propostas. Como ele se relaciona com a nova Central de Demandas?</p>
+
+<div class="section">
+  <h3 style="margin-bottom:12px;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#64748b;">Diferença conceitual</h3>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px;">
+    <div style="background:#f1f5f9;border-radius:10px;padding:16px;border-left:4px solid #94a3b8;">
+      <div style="font-weight:700;margin-bottom:8px;color:#475569;">📋 Proposta atual</div>
+      <ul style="margin:0;padding-left:18px;font-size:0.9rem;color:#64748b;line-height:1.8;">
+        <li>Sugestão livre, anônima opcional</li>
+        <li>Sem protocolo</li>
+        <li>Sem categorias</li>
+        <li>Sem histórico de movimentações</li>
+        <li>Status simples: Pendente → Respondida</li>
+        <li>Resposta única da gestão</li>
+        <li>Dados mínimos (só texto)</li>
+      </ul>
+    </div>
+    <div style="background:#eff6ff;border-radius:10px;padding:16px;border-left:4px solid #2F6FDB;">
+      <div style="font-weight:700;margin-bottom:8px;color:#1e40af;">🎯 Demanda (nova)</div>
+      <ul style="margin:0;padding-left:18px;font-size:0.9rem;color:#3b82f6;line-height:1.8;">
+        <li>Solicitação formal, identificada</li>
+        <li><strong>Protocolo RST-ANO-NNNNNN</strong></li>
+        <li>10 categorias</li>
+        <li>Histórico completo de movimentações</li>
+        <li>5 status com fluxo definido</li>
+        <li>Atualizações múltiplas da gestão</li>
+        <li>Nome, unidade, e-mail, telefone</li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3 style="margin-bottom:16px;font-size:0.85rem;text-transform:uppercase;letter-spacing:0.05em;color:#64748b;">Três abordagens possíveis</h3>
+  <div class="options">
+    <div class="option" data-choice="a" onclick="toggleSelect(this)">
+      <div class="letter">A</div>
+      <div class="content">
+        <h3>Módulos separados — manter Propostas intacto</h3>
+        <p>Proposta continua como canal de sugestão anônima/informal. Demandas é um módulo novo, independente, com schema próprio.</p>
+        <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.82rem;">
+          <div style="background:#dcfce7;border-radius:6px;padding:8px;color:#166534;">
+            ✅ Zero risco de quebrar o que funciona<br>
+            ✅ Conceitos separados e claros<br>
+            ✅ Fácil de evoluir independentemente<br>
+            ✅ Admin navigation separada
+          </div>
+          <div style="background:#fee2e2;border-radius:6px;padding:8px;color:#991b1b;">
+            ⚠️ Dois módulos similares no sistema<br>
+            ⚠️ Usuário pode não entender diferença<br>
+            ⚠️ Mais código para manter
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="option" data-choice="b" onclick="toggleSelect(this)">
+      <div class="letter">B</div>
+      <div class="content">
+        <h3>Migrar Propostas → Demandas (substituição)</h3>
+        <p>Deprecar o módulo de Propostas. Migrar todos os dados existentes para o novo schema de Demanda. Um único canal unificado.</p>
+        <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.82rem;">
+          <div style="background:#dcfce7;border-radius:6px;padding:8px;color:#166534;">
+            ✅ Um único canal, sem confusão<br>
+            ✅ Admin mais simples<br>
+            ✅ Sem duplicação de conceitos
+          </div>
+          <div style="background:#fee2e2;border-radius:6px;padding:8px;color:#991b1b;">
+            ⚠️ Risco de quebrar fluxos existentes<br>
+            ⚠️ Migração de dados necessária<br>
+            ⚠️ Propostas eram anônimas; Demandas são identificadas — incompatível<br>
+            ⚠️ Força dados que Proposta não tinha
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="option" data-choice="c" onclick="toggleSelect(this)">
+      <div class="letter">C</div>
+      <div class="content">
+        <h3>⭐ Separados, mas com componentes reutilizados (Recomendado)</h3>
+        <p>Propostas permanece como canal informal (sugestão livre). Demandas é canal formal com protocolo. Reutilizar padrões de componentes, mas schemas independentes no banco.</p>
+        <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.82rem;">
+          <div style="background:#dcfce7;border-radius:6px;padding:8px;color:#166534;">
+            ✅ Sem risco de regressão<br>
+            ✅ Conceitos distintos preservados<br>
+            ✅ Reutiliza padrões visuais/API já testados<br>
+            ✅ Morador entende a diferença de intenção<br>
+            ✅ Evolutivo: futuramente pode integrar
+          </div>
+          <div style="background:#fef9c3;border-radius:6px;padding:8px;color:#854d0e;">
+            ⚠️ Dois módulos (aceito como trade-off)<br>
+            ⚠️ Comunicar diferença para o morador
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="background:#eff6ff;border-radius:10px;padding:16px;margin-top:8px;">
+  <div style="font-weight:700;color:#1e40af;margin-bottom:8px;">💡 Minha recomendação: Opção C</div>
+  <p style="margin:0;color:#3b82f6;font-size:0.92rem;line-height:1.6;">
+    Propostas = sugestão casual, sem compromisso. Demandas = solicitação formal com rastreabilidade.<br>
+    São intenções diferentes do morador. Mesclar geraria confusão e risco sem benefício real.<br>
+    <strong>No admin</strong>, os dois ficam no menu mas separados. <strong>No público</strong>, os dois são acessíveis mas comunicados com linguagem diferente.
+  </p>
+</div>

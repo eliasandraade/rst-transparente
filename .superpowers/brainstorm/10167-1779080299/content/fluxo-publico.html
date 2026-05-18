@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fluxo Público — Central de Demandas</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Inter, system-ui, sans-serif; background: #f1f5f9; color: #1e293b; padding: 24px; }
+
+  h1 { font-size: 1.1rem; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
+  .subtitle { font-size: 0.85rem; color: #64748b; margin-bottom: 24px; }
+
+  .flow { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 8px; }
+  .screen { flex: 0 0 280px; background: white; border-radius: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: hidden; }
+  .screen-label { background: #2F6FDB; color: white; font-size: 0.72rem; font-weight: 700; padding: 6px 14px; letter-spacing: 0.05em; text-transform: uppercase; }
+  .screen-route { background: #1e40af; color: #bfdbfe; font-size: 0.68rem; padding: 3px 14px 5px; font-family: monospace; }
+  .screen-body { padding: 14px; }
+
+  /* Mini Navbar */
+  .mini-nav { background: #1e293b; color: white; padding: 8px 12px; font-size: 0.75rem; border-radius: 6px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
+  .mini-nav span { font-weight: 700; font-size: 0.8rem; }
+
+  /* Hub page */
+  .hub-title { font-size: 1rem; font-weight: 700; color: #1e293b; margin-bottom: 4px; text-align: center; }
+  .hub-sub { font-size: 0.75rem; color: #64748b; text-align: center; margin-bottom: 14px; line-height: 1.5; }
+  .btn-primary { background: #2F6FDB; color: white; border: none; border-radius: 10px; padding: 13px 14px; font-size: 0.85rem; font-weight: 700; width: 100%; margin-bottom: 8px; cursor: pointer; display: flex; align-items: center; gap: 8px; justify-content: center; }
+  .btn-secondary { background: white; color: #2F6FDB; border: 2px solid #2F6FDB; border-radius: 10px; padding: 11px 14px; font-size: 0.85rem; font-weight: 700; width: 100%; cursor: pointer; display: flex; align-items: center; gap: 8px; justify-content: center; }
+  .hub-info { background: #f8fafc; border-radius: 8px; padding: 10px; font-size: 0.72rem; color: #64748b; margin-top: 12px; line-height: 1.6; border: 1px solid #e2e8f0; }
+
+  /* Form */
+  .form-section-label { font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin: 10px 0 6px; }
+  .mock-field { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 10px; font-size: 0.78rem; color: #94a3b8; margin-bottom: 6px; }
+  .mock-field.filled { color: #1e293b; border-color: #2F6FDB; background: white; }
+  .mock-select { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 10px; font-size: 0.78rem; color: #1e293b; margin-bottom: 6px; display: flex; justify-content: space-between; }
+  .mock-textarea { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px 10px; font-size: 0.78rem; color: #94a3b8; height: 52px; margin-bottom: 6px; }
+  .upload-box { border: 2px dashed #cbd5e1; border-radius: 8px; padding: 10px; text-align: center; font-size: 0.72rem; color: #94a3b8; margin-bottom: 10px; }
+  .required-star { color: #ef4444; }
+
+  /* Success */
+  .success-icon { font-size: 2.5rem; text-align: center; margin-bottom: 8px; }
+  .success-title { font-size: 0.95rem; font-weight: 700; color: #166534; text-align: center; margin-bottom: 6px; }
+  .success-msg { font-size: 0.75rem; color: #15803d; text-align: center; margin-bottom: 14px; line-height: 1.6; }
+  .protocol-box { background: #f0fdf4; border: 2px solid #22c55e; border-radius: 10px; padding: 12px; margin-bottom: 8px; }
+  .protocol-label { font-size: 0.68rem; color: #15803d; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+  .protocol-value { font-size: 1.05rem; font-weight: 800; color: #166534; font-family: monospace; letter-spacing: 0.05em; }
+  .code-box { background: #fff7ed; border: 2px solid #f59e0b; border-radius: 10px; padding: 12px; margin-bottom: 12px; }
+  .code-label { font-size: 0.68rem; color: #92400e; font-weight: 700; text-transform: uppercase; margin-bottom: 4px; }
+  .code-value { font-size: 1.05rem; font-weight: 800; color: #78350f; font-family: monospace; letter-spacing: 0.15em; }
+  .copy-btn { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 5px 8px; font-size: 0.7rem; color: #64748b; margin-top: 4px; display: inline-flex; align-items: center; gap: 4px; }
+  .warning-box { background: #fef9c3; border: 1px solid #fbbf24; border-radius: 8px; padding: 9px; font-size: 0.72rem; color: #78350f; margin-bottom: 10px; line-height: 1.5; }
+
+  /* Lookup */
+  .lookup-title { font-size: 0.9rem; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
+  .lookup-sub { font-size: 0.75rem; color: #64748b; margin-bottom: 12px; line-height: 1.5; }
+
+  /* Detail */
+  .status-badge { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.7rem; font-weight: 700; margin-bottom: 8px; }
+  .status-recebida { background: #dbeafe; color: #1e40af; }
+  .status-andamento { background: #fef9c3; color: #854d0e; }
+  .status-resolvida { background: #dcfce7; color: #166534; }
+  .detail-title { font-size: 0.92rem; font-weight: 700; color: #1e293b; margin-bottom: 4px; }
+  .detail-meta { font-size: 0.72rem; color: #64748b; margin-bottom: 10px; }
+  .detail-desc { font-size: 0.78rem; color: #475569; background: #f8fafc; border-radius: 6px; padding: 8px; margin-bottom: 10px; line-height: 1.5; }
+  .history-label { font-size: 0.68rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 6px; }
+  .history-item { border-left: 2px solid #e2e8f0; padding: 6px 0 6px 10px; margin-bottom: 4px; font-size: 0.72rem; }
+  .history-item .h-status { font-weight: 700; color: #1e293b; }
+  .history-item .h-msg { color: #475569; margin-top: 2px; }
+  .history-item .h-date { color: #94a3b8; font-size: 0.68rem; margin-top: 2px; }
+  .privacy-note { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; font-size: 0.68rem; color: #94a3b8; margin-top: 8px; line-height: 1.5; }
+
+  /* Arrow */
+  .arrow { display: flex; align-items: center; color: #2F6FDB; font-size: 1.4rem; flex-shrink: 0; padding-top: 60px; }
+
+  /* Legend */
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.78rem; color: #64748b; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+</style>
+</head>
+<body>
+<h1>Seção 2 — Fluxo das Páginas Públicas</h1>
+<p class="subtitle">Wireframe do fluxo completo do morador · Central de Demandas · RST Transparente</p>
+
+<div class="flow">
+
+  <!-- SCREEN 1: HUB -->
+  <div class="screen">
+    <div class="screen-label">1. Hub</div>
+    <div class="screen-route">/demandas</div>
+    <div class="screen-body">
+      <div class="mini-nav"><span>RST</span><span style="font-size:0.65rem">☰</span></div>
+      <div class="hub-title">📋 Central de Demandas</div>
+      <div class="hub-sub">Abra uma solicitação ou acompanhe o andamento da sua demanda.</div>
+      <button class="btn-primary">📝 Abrir Nova Demanda</button>
+      <button class="btn-secondary">🔍 Acompanhar Demanda</button>
+      <div class="hub-info">
+        ℹ️ Ao abrir uma demanda, você recebe um <strong>protocolo</strong> e um <strong>código de acesso</strong>. Guarde para acompanhar o andamento.
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">→</div>
+
+  <!-- SCREEN 2: FORM -->
+  <div class="screen">
+    <div class="screen-label">2. Formulário</div>
+    <div class="screen-route">/demandas/nova</div>
+    <div class="screen-body">
+      <div class="mini-nav"><span>RST</span><span style="font-size:0.65rem">← Voltar</span></div>
+      <div style="font-size:0.85rem;font-weight:700;margin-bottom:10px;">Nova Demanda</div>
+
+      <div class="form-section-label">Seus dados</div>
+      <div class="mock-field filled">Nome completo <span class="required-star">*</span></div>
+      <div class="mock-field filled">Apartamento / Unidade <span class="required-star">*</span></div>
+      <div class="mock-field">Telefone (opcional)</div>
+      <div class="mock-field">E-mail (opcional)</div>
+
+      <div class="form-section-label">Sobre a demanda</div>
+      <div class="mock-select">Categoria <span>▾</span></div>
+      <div class="mock-field">Título resumido <span class="required-star">*</span></div>
+      <div class="mock-textarea">Descrição detalhada…</div>
+
+      <div class="form-section-label">Anexo (opcional)</div>
+      <div class="upload-box">📎 Foto ou documento<br><span style="font-size:0.65rem">JPG, PNG ou PDF · máx. 10MB</span></div>
+
+      <button class="btn-primary" style="font-size:0.8rem;padding:11px;">Enviar Demanda</button>
+    </div>
+  </div>
+
+  <div class="arrow">→</div>
+
+  <!-- SCREEN 3: SUCCESS -->
+  <div class="screen">
+    <div class="screen-label">3. Sucesso</div>
+    <div class="screen-route">/demandas/nova → confirmação</div>
+    <div class="screen-body">
+      <div class="success-icon">✅</div>
+      <div class="success-title">Demanda registrada!</div>
+      <div class="success-msg">Guarde os dados abaixo para acompanhar o andamento da sua solicitação.</div>
+
+      <div class="protocol-box">
+        <div class="protocol-label">📋 Número do Protocolo</div>
+        <div class="protocol-value">RST-2026-K7M9Q2</div>
+        <div class="copy-btn">📋 Copiar protocolo</div>
+      </div>
+
+      <div class="code-box">
+        <div class="code-label">🔑 Código de Acesso</div>
+        <div class="code-value">X7K9P2</div>
+        <div class="copy-btn">📋 Copiar código</div>
+      </div>
+
+      <div class="warning-box">⚠️ <strong>Atenção:</strong> O código de acesso é exibido <strong>apenas uma vez</strong>. Guarde agora em local seguro.</div>
+
+      <button class="btn-secondary" style="font-size:0.78rem;padding:10px;">🔍 Acompanhar esta demanda</button>
+    </div>
+  </div>
+
+  <div class="arrow">→</div>
+
+  <!-- SCREEN 4: LOOKUP -->
+  <div class="screen">
+    <div class="screen-label">4. Consulta</div>
+    <div class="screen-route">/demandas/acompanhar</div>
+    <div class="screen-body">
+      <div class="mini-nav"><span>RST</span><span style="font-size:0.65rem">← Voltar</span></div>
+      <div class="lookup-title">🔍 Acompanhar Demanda</div>
+      <div class="lookup-sub">Informe o protocolo e o código de acesso que você recebeu ao abrir a demanda.</div>
+
+      <div class="form-section-label">Protocolo <span class="required-star">*</span></div>
+      <div class="mock-field filled" style="font-family:monospace;font-size:0.82rem;">RST-2026-K7M9Q2</div>
+
+      <div class="form-section-label">Código de Acesso <span class="required-star">*</span></div>
+      <div class="mock-field filled" style="font-family:monospace;font-size:0.82rem;letter-spacing:0.1em;">X 7 K 9 P 2</div>
+
+      <div style="font-size:0.7rem;color:#94a3b8;margin-bottom:10px;">Não diferencia maiúsculas/minúsculas.</div>
+
+      <button class="btn-primary" style="font-size:0.8rem;padding:11px;">Consultar</button>
+
+      <div class="hub-info" style="margin-top:10px;">
+        Não encontrou? Verifique se o protocolo está correto. Dúvidas: <strong>fale com a portaria</strong>.
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">→</div>
+
+  <!-- SCREEN 5: DETAIL -->
+  <div class="screen">
+    <div class="screen-label">5. Detalhe (público)</div>
+    <div class="screen-route">/demandas/acompanhar/[protocol]</div>
+    <div class="screen-body">
+      <div class="mini-nav"><span>RST</span><span style="font-size:0.65rem">← Voltar</span></div>
+
+      <div class="status-badge status-andamento">🔄 Em andamento</div>
+      <div class="detail-title">Infiltração no teto do corredor</div>
+      <div class="detail-meta">📁 Vazamento · Aberta em 18/05/2026</div>
+
+      <div class="detail-desc">
+        Há uma mancha de umidade no teto do corredor do 3º andar, próximo ao elevador. O problema piora quando chove.
+      </div>
+
+      <div class="history-label">Histórico de andamento</div>
+      <div class="history-item">
+        <div class="h-status">✅ Recebida → Em análise</div>
+        <div class="h-msg">Demanda recebida e encaminhada ao síndico.</div>
+        <div class="h-date">19/05/2026 às 09:14</div>
+      </div>
+      <div class="history-item">
+        <div class="h-status">🔄 Em análise → Em andamento</div>
+        <div class="h-msg">Técnico agendado para vistoria na quinta-feira.</div>
+        <div class="h-date">20/05/2026 às 14:30</div>
+      </div>
+
+      <div class="privacy-note">🔒 Por privacidade, dados pessoais do solicitante não são exibidos aqui.</div>
+    </div>
+  </div>
+
+</div>
+
+<div class="legend">
+  <div class="legend-item"><div class="legend-dot" style="background:#2F6FDB"></div>Página pública — sem login</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>Dados pessoais jamais exibidos aqui</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Código de acesso: exibido 1x, depois nunca mais</div>
+</div>
+
+</body>
+</html>

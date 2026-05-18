@@ -14,8 +14,14 @@ export default function Footer() {
               Transparência
             </span>
           </div>
-          <div className="text-center sm:text-right">
-            <span>© {ano}. Informações publicadas pelo Conselho Fiscal.</span>
+          <div className="text-center sm:text-right space-y-1">
+            <div>
+              <span>© {ano}. Informações publicadas pelo Conselho Fiscal.</span>
+            </div>
+            <div className="text-xs text-muted-foreground/70">
+              Desenvolvido por{" "}
+              <span className="font-medium">Andrade Systems</span>
+            </div>
           </div>
         </div>
       </div>
