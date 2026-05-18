@@ -9,7 +9,6 @@ import {
   Wrench,
   Lightbulb,
   CalendarRange,
-  UserCircle,
 } from "lucide-react";
 
 export const metadata: Metadata = {
@@ -33,29 +32,13 @@ function progressoColor(p: number): string {
   return "var(--success)";
 }
 
-function getIniciais(nome: string): string {
-  return nome
-    .split(" ")
-    .filter(Boolean)
-    .slice(0, 2)
-    .map((n) => n[0])
-    .join("")
-    .toUpperCase();
-}
-
 /* ── page ─────────────────────────────────────────────────────────────────── */
 
 export default async function GestaoPage() {
-  const [membros, obras] = await Promise.all([
-    prisma.membro.findMany({
-      where: { ativo: true },
-      orderBy: { ordem: "asc" },
-    }),
-    prisma.obra.findMany({
-      where: { publicado: true },
-      orderBy: { createdAt: "desc" },
-    }),
-  ]);
+  const obras = await prisma.obra.findMany({
+    where: { publicado: true },
+    orderBy: { createdAt: "desc" },
+  });
 
   return (
     <div className="animate-page-enter">
@@ -80,64 +63,6 @@ export default async function GestaoPage() {
       </section>
 
       <div className="max-w-5xl mx-auto px-4 sm:px-6 py-8 space-y-12">
-
-        {/* ── Membros da gestão ─────────────────────────────────────────── */}
-        {membros.length > 0 && (
-          <section aria-label="Equipe de gestão">
-            <div className="flex items-center gap-2 mb-6">
-              <UserCircle className="w-4 h-4 text-[var(--foreground-subtle)] flex-shrink-0" aria-hidden="true" />
-              <h2 className="text-base font-bold text-foreground tracking-tight">
-                Equipe de Gestão
-              </h2>
-              <span className="badge badge-neutral ml-0.5">{membros.length}</span>
-            </div>
-
-            <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {membros.map((membro) => (
-                <article
-                  key={membro.id}
-                  className="card flex flex-col gap-4"
-                  aria-label={`${membro.nome} — ${membro.cargo}`}
-                >
-                  {/* Avatar + nome + cargo */}
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0" aria-hidden="true">
-                      {membro.fotoUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={membro.fotoUrl}
-                          alt=""
-                          className="w-12 h-12 rounded-xl object-cover border border-border"
-                        />
-                      ) : (
-                        <div className="w-12 h-12 rounded-xl bg-[var(--primary-subtle)] flex items-center justify-center border border-[var(--border)]">
-                          <span className="text-sm font-bold text-primary tracking-tight">
-                            {getIniciais(membro.nome)}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="font-semibold text-foreground text-sm leading-snug">
-                        {membro.nome}
-                      </p>
-                      <span className="inline-block mt-1 px-2 py-0.5 rounded-md bg-[var(--surface-raised)] border border-border text-xs font-medium text-[var(--foreground-muted)]">
-                        {membro.cargo}
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Mini-currículo */}
-                  {membro.descricao && (
-                    <p className="text-xs text-[var(--foreground-muted)] leading-relaxed line-clamp-4 border-t border-border pt-3">
-                      {membro.descricao}
-                    </p>
-                  )}
-                </article>
-              ))}
-            </div>
-          </section>
-        )}
 
         {/* ── Obras e Melhorias ─────────────────────────────────────────── */}
         <section aria-label="Obras e melhorias">

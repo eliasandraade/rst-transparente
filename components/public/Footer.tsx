@@ -59,7 +59,7 @@ export default function Footer() {
               </ul>
             </nav>
             <p className="text-xs text-[var(--foreground-subtle)]">
-              © {ano} Transparência RST
+              © {ano} Andrade Systems
             </p>
           </div>
         </div>

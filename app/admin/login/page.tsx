@@ -152,9 +152,6 @@ export default function LoginPage() {
           </form>
         </div>
 
-        <p className="text-center text-sm text-muted-foreground mt-6">
-          Acesso restrito ao Conselho Fiscal
-        </p>
       </div>
     </div>
   );
