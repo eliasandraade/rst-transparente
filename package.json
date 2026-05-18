@@ -1,6 +1,7 @@
 {
   "name": "rst-transparente",
   "version": "0.1.0",
+  "author": "Andrade Systems",
   "private": true,
   "scripts": {
     "dev": "next dev",
