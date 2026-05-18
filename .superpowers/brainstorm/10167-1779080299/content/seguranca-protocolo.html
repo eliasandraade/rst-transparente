@@ -1,0 +1,59 @@
+<h2>Como proteger a consulta pública por protocolo?</h2>
+<p class="subtitle">O número RST-2026-000001 é sequencial e previsível. Qual nível de verificação usar ao consultar?</p>
+
+<div class="section" style="background:#fef9c3;border-radius:10px;padding:14px;margin-bottom:20px;border-left:4px solid #f59e0b;">
+  <strong style="color:#854d0e;">Por que isso importa:</strong>
+  <span style="color:#92400e;font-size:0.9rem;"> Um vizinho malicioso poderia tentar RST-2026-000001, 000002... e ler demandas alheias (nome, unidade, telefone, descrição do problema). Precisamos de um segundo fator simples.</span>
+</div>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Protocolo + 4 últimos dígitos do telefone</h3>
+      <p>Ao consultar, o morador informa o protocolo e os 4 últimos dígitos do telefone cadastrado. Fácil de lembrar, difícil de adivinhar.</p>
+      <div style="background:#f8fafc;border-radius:8px;padding:12px;margin-top:10px;font-size:0.85rem;">
+        <div style="margin-bottom:8px;"><strong>Exemplo de tela:</strong></div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:8px;">📋 Protocolo: <strong>RST-2026-000001</strong></div>
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:8px;">📱 Últimos 4 dígitos do telefone: <strong>_ _ _ _</strong></div>
+        </div>
+      </div>
+      <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.82rem;">
+        <div style="background:#dcfce7;border-radius:6px;padding:8px;color:#166534;">✅ Fácil de lembrar<br>✅ Bom equilíbrio segurança/UX<br>✅ Funciona para idosos</div>
+        <div style="background:#fee2e2;border-radius:6px;padding:8px;color:#991b1b;">⚠️ Quem não lembrar do telefone fica preso<br>⚠️ Número pode mudar</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>⭐ Protocolo + e-mail (Recomendado)</h3>
+      <p>Ao consultar, o morador informa o protocolo e o e-mail cadastrado. Mais fácil de lembrar que telefone, já que usou o mesmo e-mail para abrir.</p>
+      <div style="background:#f8fafc;border-radius:8px;padding:12px;margin-top:10px;font-size:0.85rem;">
+        <div style="margin-bottom:8px;"><strong>Exemplo de tela:</strong></div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:8px;">📋 Protocolo: <strong>RST-2026-000001</strong></div>
+          <div style="background:#fff;border:1px solid #e2e8f0;border-radius:6px;padding:8px;">📧 E-mail: <strong>seu@email.com</strong></div>
+        </div>
+      </div>
+      <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.82rem;">
+        <div style="background:#dcfce7;border-radius:6px;padding:8px;color:#166534;">✅ Morador usa o mesmo e-mail que digitou<br>✅ E-mail é único e estável<br>✅ Familiar para todos<br>✅ Verificação exata (case-insensitive)</div>
+        <div style="background:#fef9c3;border-radius:6px;padding:8px;color:#854d0e;">⚠️ Quem abriu sem e-mail não consegue rastrear (mas e-mail é obrigatório no formulário)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Somente protocolo (sem verificação)</h3>
+      <p>Qualquer um com o número RST-2026-000001 vê a demanda. Simples, mas sem privacidade. Não recomendado — expõe dados pessoais do morador.</p>
+      <div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:0.82rem;">
+        <div style="background:#dcfce7;border-radius:6px;padding:8px;color:#166534;">✅ Zero fricção<br>✅ Mais simples de implementar</div>
+        <div style="background:#fee2e2;border-radius:6px;padding:8px;color:#991b1b;">❌ Qualquer pessoa pode ler demandas alheias<br>❌ Expõe nome, unidade, telefone, problema<br>❌ Viola LGPD / boas práticas</div>
+      </div>
+    </div>
+  </div>
+</div>

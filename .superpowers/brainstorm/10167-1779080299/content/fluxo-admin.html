@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Seção 3 — Área Admin Central de Demandas</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Inter, system-ui, sans-serif; background: #f1f5f9; color: #1e293b; padding: 24px; }
+  h1 { font-size: 1.1rem; font-weight: 700; margin-bottom: 4px; }
+  .subtitle { font-size: 0.85rem; color: #64748b; margin-bottom: 24px; }
+
+  .screens { display: flex; gap: 16px; overflow-x: auto; padding-bottom: 8px; align-items: flex-start; }
+  .screen { flex: 0 0 320px; background: white; border-radius: 14px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: hidden; }
+  .screen-wide { flex: 0 0 400px; }
+  .screen-label { background: #1e293b; color: white; font-size: 0.72rem; font-weight: 700; padding: 6px 14px; letter-spacing: 0.05em; text-transform: uppercase; }
+  .screen-route { background: #0f172a; color: #94a3b8; font-size: 0.68rem; padding: 3px 14px 5px; font-family: monospace; }
+  .screen-body { padding: 14px; }
+
+  /* Admin shell */
+  .admin-shell { display: flex; gap: 0; }
+  .sidebar { width: 90px; background: #1e293b; padding: 10px 8px; flex-shrink: 0; border-radius: 0 0 0 14px; }
+  .sidebar-logo { color: white; font-size: 0.65rem; font-weight: 800; text-align: center; margin-bottom: 10px; padding-bottom: 8px; border-bottom: 1px solid #334155; }
+  .sidebar-item { color: #94a3b8; font-size: 0.62rem; padding: 5px 4px; border-radius: 5px; margin-bottom: 2px; text-align: center; cursor: pointer; }
+  .sidebar-item.active { background: #2F6FDB; color: white; font-weight: 700; }
+  .sidebar-item.new { background: #1e40af22; color: #60a5fa; font-weight: 700; }
+  .main-area { flex: 1; padding: 12px; overflow: hidden; }
+
+  /* Page header */
+  .page-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .page-title { font-size: 0.9rem; font-weight: 700; }
+  .badge-count { background: #eff6ff; color: #2F6FDB; font-size: 0.68rem; font-weight: 700; padding: 2px 8px; border-radius: 999px; }
+
+  /* Filters */
+  .filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 10px; }
+  .filter-chip { background: #f1f5f9; border: 1px solid #e2e8f0; border-radius: 6px; padding: 4px 8px; font-size: 0.7rem; color: #64748b; cursor: pointer; }
+  .filter-chip.active { background: #eff6ff; border-color: #2F6FDB; color: #2F6FDB; font-weight: 700; }
+
+  /* Demand rows */
+  .demand-row { border: 1px solid #e2e8f0; border-radius: 8px; padding: 9px 10px; margin-bottom: 6px; cursor: pointer; transition: border-color 0.15s; }
+  .demand-row:hover { border-color: #2F6FDB; }
+  .demand-row-top { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 3px; }
+  .demand-title-sm { font-size: 0.78rem; font-weight: 700; color: #1e293b; }
+  .status-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; margin-top: 3px; }
+  .dot-recebida { background: #60a5fa; }
+  .dot-analise { background: #f59e0b; }
+  .dot-andamento { background: #a78bfa; }
+  .dot-resolvida { background: #22c55e; }
+  .dot-encerrada { background: #94a3b8; }
+  .demand-meta { font-size: 0.68rem; color: #94a3b8; }
+  .demand-protocol { font-family: monospace; font-size: 0.68rem; color: #2F6FDB; font-weight: 700; }
+
+  /* Status badges */
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 0.68rem; font-weight: 700; }
+  .badge-recebida { background: #dbeafe; color: #1e40af; }
+  .badge-analise { background: #fef9c3; color: #854d0e; }
+  .badge-andamento { background: #ede9fe; color: #6d28d9; }
+  .badge-resolvida { background: #dcfce7; color: #166534; }
+  .badge-encerrada { background: #f1f5f9; color: #64748b; }
+
+  /* Detail: personal data */
+  .section-title { font-size: 0.7rem; font-weight: 700; color: #64748b; text-transform: uppercase; letter-spacing: 0.05em; margin: 12px 0 7px; padding-bottom: 4px; border-bottom: 1px solid #f1f5f9; }
+  .detail-field { display: flex; justify-content: space-between; margin-bottom: 5px; }
+  .detail-field-label { font-size: 0.72rem; color: #94a3b8; }
+  .detail-field-value { font-size: 0.72rem; color: #1e293b; font-weight: 600; text-align: right; max-width: 60%; }
+  .detail-desc-box { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 9px; font-size: 0.75rem; color: #475569; line-height: 1.5; margin-bottom: 10px; }
+  .attachment-link { display: flex; align-items: center; gap: 6px; font-size: 0.72rem; color: #2F6FDB; background: #eff6ff; border-radius: 6px; padding: 6px 9px; margin-bottom: 10px; }
+
+  /* Status change */
+  .status-select-row { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .status-select { flex: 1; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 7px 10px; font-size: 0.78rem; }
+  .btn-status { background: #2F6FDB; color: white; border: none; border-radius: 6px; padding: 7px 12px; font-size: 0.75rem; font-weight: 700; cursor: pointer; white-space: nowrap; }
+
+  /* Response textarea */
+  .response-area { background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 6px; padding: 8px; font-size: 0.75rem; color: #1e293b; width: 100%; resize: none; height: 60px; margin-bottom: 8px; }
+  .btn-respond { background: #22c55e; color: white; border: none; border-radius: 6px; padding: 8px 14px; font-size: 0.75rem; font-weight: 700; cursor: pointer; width: 100%; }
+  .btn-close { background: #f1f5f9; color: #64748b; border: 1px solid #e2e8f0; border-radius: 6px; padding: 7px 14px; font-size: 0.72rem; font-weight: 600; cursor: pointer; width: 100%; margin-top: 5px; }
+
+  /* History admin */
+  .history-item { border-left: 3px solid #e2e8f0; padding: 6px 0 6px 10px; margin-bottom: 6px; }
+  .history-item.green { border-left-color: #22c55e; }
+  .history-item.blue { border-left-color: #2F6FDB; }
+  .history-item.amber { border-left-color: #f59e0b; }
+  .h-top { display: flex; justify-content: space-between; margin-bottom: 2px; }
+  .h-transition { font-size: 0.72rem; font-weight: 700; color: #1e293b; }
+  .h-date { font-size: 0.65rem; color: #94a3b8; }
+  .h-msg { font-size: 0.7rem; color: #475569; }
+  .h-by { font-size: 0.65rem; color: #94a3b8; margin-top: 2px; }
+
+  /* Arrow */
+  .arrow { display: flex; align-items: center; color: #64748b; font-size: 1.2rem; flex-shrink: 0; padding-top: 80px; }
+
+  /* Legend */
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 20px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 0.75rem; color: #64748b; }
+  .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+</style>
+</head>
+<body>
+
+<h1>Seção 3 — Área Administrativa · Central de Demandas</h1>
+<p class="subtitle">Visão das telas admin · Acesso para todos os roles autenticados</p>
+
+<div class="screens">
+
+  <!-- SCREEN 1: LISTA -->
+  <div class="screen screen-wide">
+    <div class="screen-label">1. Lista de Demandas</div>
+    <div class="screen-route">/admin/demandas</div>
+    <div class="admin-shell">
+      <div class="sidebar">
+        <div class="sidebar-logo">RST</div>
+        <div class="sidebar-item">Painel</div>
+        <div class="sidebar-item">Lanç.</div>
+        <div class="sidebar-item">Avisos</div>
+        <div class="sidebar-item new active">📋 Dem.</div>
+        <div class="sidebar-item">Propos.</div>
+        <div class="sidebar-item">Obras</div>
+        <div class="sidebar-item">Config.</div>
+      </div>
+      <div class="main-area">
+        <div class="page-header">
+          <div class="page-title">Demandas</div>
+          <div class="badge-count">12 abertas</div>
+        </div>
+
+        <!-- Filtros -->
+        <div class="filters">
+          <div class="filter-chip active">Todas</div>
+          <div class="filter-chip">Recebida</div>
+          <div class="filter-chip">Em análise</div>
+          <div class="filter-chip">Em andamento</div>
+          <div class="filter-chip">Resolvida</div>
+        </div>
+        <div class="filters" style="margin-top:-4px;">
+          <div class="filter-chip">Categoria ▾</div>
+          <div class="filter-chip">Período ▾</div>
+          <div style="flex:1;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:4px 8px;font-size:0.7rem;color:#94a3b8;">🔍 Buscar…</div>
+        </div>
+
+        <!-- Rows -->
+        <div class="demand-row">
+          <div class="demand-row-top">
+            <div>
+              <div class="demand-title-sm">Infiltração no teto do corredor</div>
+              <div class="demand-meta">Apto 302 · Vazamento</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
+              <div class="badge badge-andamento">Em andamento</div>
+              <div class="demand-protocol">RST-2026-K7M9Q2</div>
+            </div>
+          </div>
+          <div class="demand-meta">Aberta 18/05 · Atualizada 20/05</div>
+        </div>
+
+        <div class="demand-row">
+          <div class="demand-row-top">
+            <div>
+              <div class="demand-title-sm">Portão da garagem travado</div>
+              <div class="demand-meta">Apto 101 · Manutenção</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
+              <div class="badge badge-recebida">Recebida</div>
+              <div class="demand-protocol">RST-2026-P3NX7A</div>
+            </div>
+          </div>
+          <div class="demand-meta">Aberta 17/05</div>
+        </div>
+
+        <div class="demand-row">
+          <div class="demand-row-top">
+            <div>
+              <div class="demand-title-sm">Lâmpada queimada no hall</div>
+              <div class="demand-meta">Apto 205 · Iluminação</div>
+            </div>
+            <div style="display:flex;flex-direction:column;align-items:flex-end;gap:3px;">
+              <div class="badge badge-resolvida">Resolvida</div>
+              <div class="demand-protocol">RST-2026-B8QR4M</div>
+            </div>
+          </div>
+          <div class="demand-meta">Aberta 15/05 · Resolvida 16/05</div>
+        </div>
+
+        <div style="font-size:0.7rem;color:#94a3b8;text-align:center;padding:6px 0;">
+          + 9 demandas · Página 1 de 2
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="arrow">→</div>
+
+  <!-- SCREEN 2: DETALHE ADMIN -->
+  <div class="screen screen-wide">
+    <div class="screen-label">2. Detalhe da Demanda</div>
+    <div class="screen-route">/admin/demandas/[id]</div>
+    <div class="screen-body">
+
+      <!-- Header da demanda -->
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:8px;">
+        <div>
+          <div class="badge badge-andamento" style="margin-bottom:5px;">🔄 Em andamento</div>
+          <div style="font-size:0.88rem;font-weight:700;color:#1e293b;">Infiltração no teto do corredor</div>
+          <div style="font-size:0.7rem;color:#64748b;margin-top:2px;">📁 Vazamento · RST-2026-K7M9Q2</div>
+        </div>
+      </div>
+
+      <!-- Dados pessoais (só admin) -->
+      <div class="section-title">🔒 Dados do Solicitante</div>
+      <div style="background:#fef9c3;border-radius:8px;padding:10px;margin-bottom:8px;border:1px solid #fbbf24;">
+        <div class="detail-field"><span class="detail-field-label">Nome</span><span class="detail-field-value">Maria da Silva</span></div>
+        <div class="detail-field"><span class="detail-field-label">Unidade</span><span class="detail-field-value">Apto 302, Bloco A</span></div>
+        <div class="detail-field"><span class="detail-field-label">Telefone</span><span class="detail-field-value">(11) 9 8765-4321</span></div>
+        <div class="detail-field"><span class="detail-field-label">E-mail</span><span class="detail-field-value">maria@email.com</span></div>
+        <div style="font-size:0.65rem;color:#92400e;margin-top:4px;">⚠️ Visível apenas para a gestão</div>
+      </div>
+
+      <!-- Descrição -->
+      <div class="section-title">📝 Descrição</div>
+      <div class="detail-desc-box">Há uma mancha de umidade no teto do corredor do 3º andar, próximo ao elevador. O problema piora quando chove forte.</div>
+
+      <!-- Anexo -->
+      <div class="attachment-link">📎 foto-teto-corredor.jpg <span style="color:#94a3b8;font-size:0.65rem;margin-left:auto;">ver anexo ↗</span></div>
+
+      <!-- Alterar status -->
+      <div class="section-title">🔄 Alterar Status</div>
+      <div class="status-select-row">
+        <select class="status-select"><option>Em andamento</option><option>Resolvida</option><option>Encerrada sem ação</option></select>
+        <button class="btn-status">Salvar</button>
+      </div>
+
+      <!-- Responder / atualizar -->
+      <div class="section-title">💬 Mensagem para o Morador</div>
+      <textarea class="response-area" placeholder="Escreva uma atualização para o morador (aparecerá no histórico público)…"></textarea>
+      <button class="btn-respond">Enviar Atualização</button>
+      <button class="btn-close">Encerrar Demanda</button>
+
+      <!-- Histórico -->
+      <div class="section-title" style="margin-top:14px;">📋 Histórico</div>
+      <div class="history-item blue">
+        <div class="h-top"><span class="h-transition">Recebida → Em análise</span><span class="h-date">19/05 09:14</span></div>
+        <div class="h-msg">Demanda encaminhada ao síndico.</div>
+        <div class="h-by">por Carlos (SINDICO)</div>
+      </div>
+      <div class="history-item amber">
+        <div class="h-top"><span class="h-transition">Em análise → Em andamento</span><span class="h-date">20/05 14:30</span></div>
+        <div class="h-msg">Técnico agendado para quinta-feira.</div>
+        <div class="h-by">por Carlos (SINDICO)</div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="legend" style="margin-top:20px;">
+  <div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div>Dados pessoais — caixa amarela, visível só no admin</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#2F6FDB"></div>Histórico rastreia usuário responsável + timestamp</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#22c55e"></div>Atualização vai para histórico público (sem dados pessoais)</div>
+  <div class="legend-item"><div class="legend-dot" style="background:#a78bfa"></div>Filtros: status + categoria + período + busca livre</div>
+</div>
+
+</body>
+</html>
