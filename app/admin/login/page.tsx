@@ -132,7 +132,7 @@ export default function LoginPage() {
               {/* Botão */}
               <button
                 type="submit"
-                className="btn-primary w-full"
+                className="btn btn-primary w-full"
                 disabled={carregando || !email || !senha}
                 aria-busy={carregando}
               >

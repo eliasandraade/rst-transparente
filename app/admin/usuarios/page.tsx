@@ -38,7 +38,7 @@ export default async function UsuariosPage() {
             Gerencie quem tem acesso à área administrativa.
           </p>
         </div>
-        <Link href="/admin/usuarios/novo" className="btn-primary flex items-center gap-2">
+        <Link href="/admin/usuarios/novo" className="btn btn-primary flex items-center gap-2">
           <UserPlus className="w-4 h-4" />
           Novo usuário
         </Link>

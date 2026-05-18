@@ -51,7 +51,7 @@ export default async function LancamentosPage({ searchParams }: Props) {
             periodo={periodo}
             totalRascunhos={lancamentos.filter((l) => l.status === "RASCUNHO").length}
           />
-          <Link href="/admin/lancamentos/novo" className="btn-primary">
+          <Link href="/admin/lancamentos/novo" className="btn btn-primary">
             <PlusCircle className="w-4 h-4" aria-hidden="true" />
             Novo lançamento
           </Link>
@@ -77,7 +77,7 @@ export default async function LancamentosPage({ searchParams }: Props) {
               <option value="DESPESA">Despesas</option>
             </select>
           </div>
-          <button type="submit" className="btn-secondary">Filtrar</button>
+          <button type="submit" className="btn btn-secondary">Filtrar</button>
         </form>
       </div>
 
@@ -86,15 +86,15 @@ export default async function LancamentosPage({ searchParams }: Props) {
         <div className="grid grid-cols-3 gap-4">
           <div className="card py-3">
             <p className="text-xs text-muted-foreground">Receitas</p>
-            <p className="font-bold text-green-700">{formatarMoeda(totalReceitas)}</p>
+            <p className="font-bold text-[var(--success)] tabular-nums">{formatarMoeda(totalReceitas)}</p>
           </div>
           <div className="card py-3">
             <p className="text-xs text-muted-foreground">Despesas</p>
-            <p className="font-bold text-red-700">{formatarMoeda(totalDespesas)}</p>
+            <p className="font-bold text-[var(--danger)] tabular-nums">{formatarMoeda(totalDespesas)}</p>
           </div>
           <div className="card py-3">
             <p className="text-xs text-muted-foreground">Saldo</p>
-            <p className={`font-bold ${totalReceitas - totalDespesas >= 0 ? "text-primary" : "text-red-700"}`}>
+            <p className={`font-bold tabular-nums ${totalReceitas - totalDespesas >= 0 ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
               {formatarMoeda(totalReceitas - totalDespesas)}
             </p>
           </div>
@@ -105,7 +105,7 @@ export default async function LancamentosPage({ searchParams }: Props) {
       {lancamentos.length === 0 ? (
         <div className="card text-center py-12">
           <p className="text-muted-foreground">Nenhum lançamento neste período.</p>
-          <Link href="/admin/lancamentos/novo" className="btn-primary mt-4 inline-flex">
+          <Link href="/admin/lancamentos/novo" className="btn btn-primary mt-4 inline-flex">
             <PlusCircle className="w-4 h-4" /> Criar primeiro lançamento
           </Link>
         </div>
@@ -139,7 +139,7 @@ export default async function LancamentosPage({ searchParams }: Props) {
                       {l.categoria.nome}
                     </span>
                   </td>
-                  <td className={`px-4 py-3 text-right font-semibold ${l.tipo === "RECEITA" ? "text-green-700" : "text-red-700"}`}>
+                  <td className={`px-4 py-3 text-right font-semibold tabular-nums ${l.tipo === "RECEITA" ? "text-[var(--success)]" : "text-[var(--danger)]"}`}>
                     {formatarMoeda(Number(l.valor))}
                   </td>
                   <td className="px-4 py-3 text-center">
@@ -157,7 +157,7 @@ export default async function LancamentosPage({ searchParams }: Props) {
                     <div className="flex items-center justify-end gap-2">
                       <Link
                         href={`/admin/lancamentos/${l.id}`}
-                        className="btn-secondary py-1.5 px-3 text-xs min-h-[auto]"
+                        className="btn btn-secondary py-1.5 px-3 text-xs min-h-[auto]"
                         aria-label={`Editar lançamento: ${l.descricao}`}
                       >
                         <Pencil className="w-3 h-3" /> Editar

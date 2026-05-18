@@ -32,7 +32,7 @@ export default async function EnquetesPage() {
     <div className="max-w-5xl mx-auto px-4 py-8">
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center">
+          <div className="w-10 h-10 bg-[var(--primary-subtle)] rounded-lg flex items-center justify-center">
             <BarChart2 className="w-5 h-5 text-primary" aria-hidden="true" />
           </div>
           <div>
@@ -42,7 +42,7 @@ export default async function EnquetesPage() {
             </p>
           </div>
         </div>
-        <Link href="/admin/enquetes/novo" className="btn-primary flex items-center gap-2">
+        <Link href="/admin/enquetes/novo" className="btn btn-primary flex items-center gap-2">
           <Plus className="w-4 h-4" aria-hidden="true" />
           Nova enquete
         </Link>

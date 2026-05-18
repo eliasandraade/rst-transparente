@@ -24,9 +24,9 @@ export default async function AdminLayout({
   }
 
   return (
-    <div className="flex min-h-screen bg-muted">
+    <div className="flex min-h-screen bg-[var(--surface-raised)]">
       {/* Sidebar — desktop */}
-      <div className="hidden md:flex">
+      <div className="hidden md:flex flex-shrink-0">
         <AdminNav userRole={session.user.role} />
       </div>
 
@@ -35,7 +35,7 @@ export default async function AdminLayout({
         {/* Header mobile */}
         <AdminMobileHeader userName={session.user.name} userRole={session.user.role} />
 
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 max-w-6xl">
+        <main className="flex-1 p-4 sm:p-6 lg:p-8">
           {children}
         </main>
       </div>
