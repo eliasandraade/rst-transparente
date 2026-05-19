@@ -45,6 +45,8 @@ export async function POST(request: Request) {
       erroSync = err instanceof Error ? err.message : "Erro na API DataJud";
     }
 
+    const toDate = (s?: string) => { if (!s) return null; const d = new Date(s); return isNaN(d.getTime()) ? null : d; };
+
     const processo = await prisma.processo.create({
       data: {
         numeroProcesso: numeroNormalizado,
@@ -53,13 +55,9 @@ export async function POST(request: Request) {
         assunto: dadosDataJud?.assunto ?? null,
         orgaoJulgador: dadosDataJud?.orgaoJulgador ?? null,
         grau: dadosDataJud?.grau ?? null,
-        dataAjuizamento: dadosDataJud?.dataAjuizamento
-          ? new Date(dadosDataJud.dataAjuizamento)
-          : null,
+        dataAjuizamento: toDate(dadosDataJud?.dataAjuizamento),
         ultimaMovimentacao: dadosDataJud?.ultimaMovimentacao ?? null,
-        dataUltimaMovim: dadosDataJud?.dataUltimaMovim
-          ? new Date(dadosDataJud.dataUltimaMovim)
-          : null,
+        dataUltimaMovim: toDate(dadosDataJud?.dataUltimaMovim),
         resumoPublico: data.resumoPublico ?? null,
         observacoesInternas: data.observacoesInternas ?? null,
         origem: dadosDataJud ? "DATAJUD" : "MANUAL",

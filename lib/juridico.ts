@@ -190,6 +190,8 @@ export async function syncProcesso(
       dataUltimaMovim: processo.dataUltimaMovim,
     };
 
+    const toDate = (s?: string) => { if (!s) return null; const d = new Date(s); return isNaN(d.getTime()) ? null : d; };
+
     await prisma.processo.update({
       where: { id: processoId },
       data: {
@@ -197,13 +199,9 @@ export async function syncProcesso(
         assunto: dados.assunto ?? processo.assunto,
         orgaoJulgador: dados.orgaoJulgador ?? processo.orgaoJulgador,
         grau: dados.grau ?? processo.grau,
-        dataAjuizamento: dados.dataAjuizamento
-          ? new Date(dados.dataAjuizamento)
-          : processo.dataAjuizamento,
+        dataAjuizamento: toDate(dados.dataAjuizamento) ?? processo.dataAjuizamento,
         ultimaMovimentacao: dados.ultimaMovimentacao ?? processo.ultimaMovimentacao,
-        dataUltimaMovim: dados.dataUltimaMovim
-          ? new Date(dados.dataUltimaMovim)
-          : processo.dataUltimaMovim,
+        dataUltimaMovim: toDate(dados.dataUltimaMovim) ?? processo.dataUltimaMovim,
         ultimaSincronizacao: new Date(),
         origem: "DATAJUD",
       },
