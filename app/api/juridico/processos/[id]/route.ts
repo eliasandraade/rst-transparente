@@ -31,6 +31,7 @@ export async function PATCH(
 
     const statusMudou = data.status && data.status !== atual.status;
     const arquivando = data.ativo === false && atual.ativo === true;
+    const reativando = data.ativo === true && atual.ativo === false;
 
     const atualizado = await prisma.processo.update({
       where: { id },
@@ -48,6 +49,8 @@ export async function PATCH(
 
     const acao = arquivando
       ? "ARQUIVAMENTO"
+      : reativando
+      ? "REATIVACAO"
       : statusMudou
       ? "MUDANCA_STATUS"
       : "EDICAO";

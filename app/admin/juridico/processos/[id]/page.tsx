@@ -7,8 +7,9 @@ import Link from "next/link";
 import { formatarNumeroProcesso } from "@/lib/juridico";
 import { formatarData, formatarDataHoraAmigavel } from "@/lib/utils";
 import type { Metadata } from "next";
-import { ArrowLeft, RefreshCw } from "lucide-react";
+import { ArrowLeft, RefreshCw, Archive } from "lucide-react";
 import ProcessoSyncButton from "@/components/admin/juridico/ProcessoSyncButton";
+import ProcessoArquivarButton from "@/components/admin/juridico/ProcessoArquivarButton";
 import type { ProcessoStatus } from "@prisma/client";
 
 export const metadata: Metadata = { title: "Processo | Jurídico | Admin" };
@@ -68,6 +69,12 @@ export default async function ProcessoDetalhePage({
           <div>
             <div className="flex items-center gap-2 flex-wrap mb-1">
               <span className={STATUS_BADGE[processo.status]}>{STATUS_LABEL[processo.status]}</span>
+              {!processo.ativo && (
+                <span className="badge badge-neutral flex items-center gap-1">
+                  <Archive className="w-2.5 h-2.5" aria-hidden="true" />
+                  Arquivado
+                </span>
+              )}
               {processo.origem === "DATAJUD" && (
                 <span className="badge badge-neutral flex items-center gap-1">
                   <RefreshCw className="w-2.5 h-2.5" aria-hidden="true" />
@@ -84,7 +91,10 @@ export default async function ProcessoDetalhePage({
               </p>
             )}
           </div>
-          <ProcessoSyncButton processoId={processo.id} />
+          <div className="flex items-center gap-2 flex-wrap">
+            <ProcessoArquivarButton processoId={processo.id} ativo={processo.ativo} />
+            <ProcessoSyncButton processoId={processo.id} />
+          </div>
         </div>
       </div>
 

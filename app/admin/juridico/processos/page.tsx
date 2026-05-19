@@ -7,7 +7,7 @@ import Link from "next/link";
 import { formatarNumeroProcesso } from "@/lib/juridico";
 import { formatarDataHoraAmigavel } from "@/lib/utils";
 import type { Metadata } from "next";
-import { Scale, Plus, RefreshCw } from "lucide-react";
+import { Scale, Plus, RefreshCw, Archive } from "lucide-react";
 import type { ProcessoStatus } from "@prisma/client";
 
 export const metadata: Metadata = {
@@ -32,7 +32,7 @@ const STATUS_LABEL: Record<ProcessoStatus, string> = {
 export default async function ProcessosPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; search?: string }>;
+  searchParams: Promise<{ status?: string; search?: string; arquivados?: string }>;
 }) {
   const session = await auth();
   if (!session) redirect("/admin/login");
@@ -40,6 +40,7 @@ export default async function ProcessosPage({
   const params = await searchParams;
   const rawStatus = params.status;
   const search = params.search;
+  const verArquivados = params.arquivados === "1";
 
   const status =
     rawStatus && VALID_STATUS.includes(rawStatus as ProcessoStatus)
@@ -48,8 +49,8 @@ export default async function ProcessosPage({
 
   const processos = await prisma.processo.findMany({
     where: {
-      ativo: true,
-      ...(status ? { status } : {}),
+      ativo: !verArquivados,
+      ...(status && !verArquivados ? { status } : {}),
       ...(search
         ? {
             OR: [
@@ -82,35 +83,66 @@ export default async function ProcessosPage({
       </div>
 
       <div className="px-6 py-5">
-        {/* Filtros */}
-        <form method="GET" className="flex flex-wrap gap-3 mb-5">
-          <input
-            name="search"
-            defaultValue={search}
-            placeholder="Buscar por número, classe ou assunto..."
-            className="input pl-3 w-full sm:w-72 text-sm"
-          />
-          <select name="status" defaultValue={rawStatus ?? ""} className="select w-auto text-sm">
-            <option value="">Todos os status</option>
-            {VALID_STATUS.map((s) => (
-              <option key={s} value={s}>{STATUS_LABEL[s]}</option>
-            ))}
-          </select>
-          <button type="submit" className="btn btn-secondary btn-sm">Filtrar</button>
-          {(search || rawStatus) && (
-            <Link href="/admin/juridico/processos" className="btn btn-secondary btn-sm">Limpar</Link>
-          )}
-        </form>
+        {/* Abas Ativos / Arquivados */}
+        <div className="flex gap-1 mb-5 border-b border-border">
+          <Link
+            href="/admin/juridico/processos"
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors ${
+              !verArquivados
+                ? "border-primary text-primary"
+                : "border-transparent text-[var(--foreground-muted)] hover:text-foreground"
+            }`}
+          >
+            Ativos
+          </Link>
+          <Link
+            href="/admin/juridico/processos?arquivados=1"
+            className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors flex items-center gap-1.5 ${
+              verArquivados
+                ? "border-primary text-primary"
+                : "border-transparent text-[var(--foreground-muted)] hover:text-foreground"
+            }`}
+          >
+            <Archive className="w-3.5 h-3.5" aria-hidden="true" />
+            Arquivados
+          </Link>
+        </div>
+
+        {/* Filtros (só na aba Ativos) */}
+        {!verArquivados && (
+          <form method="GET" className="flex flex-wrap gap-3 mb-5">
+            <input
+              name="search"
+              defaultValue={search}
+              placeholder="Buscar por número, classe ou assunto..."
+              className="input pl-3 w-full sm:w-72 text-sm"
+            />
+            <select name="status" defaultValue={rawStatus ?? ""} className="select w-auto text-sm">
+              <option value="">Todos os status</option>
+              {VALID_STATUS.map((s) => (
+                <option key={s} value={s}>{STATUS_LABEL[s]}</option>
+              ))}
+            </select>
+            <button type="submit" className="btn btn-secondary btn-sm">Filtrar</button>
+            {(search || rawStatus) && (
+              <Link href="/admin/juridico/processos" className="btn btn-secondary btn-sm">Limpar</Link>
+            )}
+          </form>
+        )}
 
         {processos.length === 0 ? (
           <div className="card text-center py-14">
             <div className="w-10 h-10 rounded-xl bg-[var(--surface-raised)] flex items-center justify-center mx-auto mb-3" aria-hidden="true">
-              <Scale className="w-5 h-5 text-[var(--foreground-subtle)]" />
+              {verArquivados ? <Archive className="w-5 h-5 text-[var(--foreground-subtle)]" /> : <Scale className="w-5 h-5 text-[var(--foreground-subtle)]" />}
             </div>
             <p className="text-[var(--foreground-muted)] text-sm font-medium">
-              {search || status ? "Nenhum processo encontrado." : "Nenhum processo cadastrado."}
+              {verArquivados
+                ? "Nenhum processo arquivado."
+                : search || status
+                ? "Nenhum processo encontrado."
+                : "Nenhum processo cadastrado."}
             </p>
-            {!search && !status && (
+            {!verArquivados && !search && !status && (
               <Link href="/admin/juridico/processos/novo" className="btn btn-primary btn-sm mt-4 inline-flex">
                 Cadastrar primeiro processo
               </Link>
