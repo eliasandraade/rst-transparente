@@ -91,8 +91,9 @@ export async function POST(request: Request) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues[0].message }, { status: 400 });
     }
+    const msg = err instanceof Error ? err.message : String(err);
     console.error("[POST /api/juridico/processos]", err);
-    return NextResponse.json({ error: "Erro ao cadastrar processo." }, { status: 500 });
+    return NextResponse.json({ error: `Erro ao cadastrar processo: ${msg}` }, { status: 500 });
   }
 }
 
