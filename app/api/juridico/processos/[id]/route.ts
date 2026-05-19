@@ -3,7 +3,6 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
 import { registrarAuditoria } from "@/lib/juridico";
-import type { ProcessoStatus } from "@prisma/client";
 
 
 const PatchProcessoSchema = z.object({
