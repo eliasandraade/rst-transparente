@@ -9,7 +9,7 @@ import {
   Menu, X, LogOut, Building2, Settings, Users,
   LayoutDashboard, TrendingUp, FileText, FileSpreadsheet,
   Bell, HardHat, MessageSquare, BarChart2, FileDown,
-  UserCircle, UsersRound, ClipboardList, ExternalLink,
+  UserCircle, UsersRound, ClipboardList, Scale, ExternalLink,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
 
@@ -21,9 +21,10 @@ const links = [
   { href: "/admin/avisos", icone: Bell, label: "Avisos" },
   { href: "/admin/obras", icone: HardHat, label: "Obras" },
   { href: "/admin/propostas", icone: MessageSquare, label: "Propostas" },
+  { href: "/admin/demandas", icone: ClipboardList, label: "Demandas" },
+  { href: "/admin/juridico", icone: Scale, label: "Jurídico" },
   { href: "/admin/enquetes", icone: BarChart2, label: "Enquetes" },
   { href: "/admin/planilhas", icone: FileDown, label: "Planilhas" },
-  { href: "/admin/demandas", icone: ClipboardList, label: "Demandas" },
   { href: "/admin/membros", icone: UsersRound, label: "Quem Somos" },
 ];
 

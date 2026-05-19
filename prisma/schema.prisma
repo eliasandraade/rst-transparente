@@ -13,15 +13,18 @@ datasource db {
 // ─── Usuários da área administrativa ─────────────────────────────────────────
 
 model User {
-  id             String         @id @default(cuid())
-  email          String         @unique
-  name           String
-  password       String
-  role           Role           @default(CONSELHO)
-  ativo          Boolean        @default(true)
-  createdAt      DateTime       @default(now())
-  updatedAt      DateTime       @updatedAt
-  demandUpdates  DemandUpdate[]
+  id                   String              @id @default(cuid())
+  email                String              @unique
+  name                 String
+  password             String
+  role                 Role                @default(CONSELHO)
+  ativo                Boolean             @default(true)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+  demandUpdates        DemandUpdate[]
+  notificacoesEmitidas Notificacao[]       @relation("NotificacaoCriador")
+  multasAplicadas      Multa[]             @relation("MultaCriador")
+  juridicoAuditorias   JuridicoAuditoria[] @relation("JuridicoAuditor")
 
   @@map("users")
 }
@@ -318,4 +321,139 @@ model DemandUpdate {
 
   @@index([demandId])
   @@map("demand_updates")
+}
+
+// ─── Jurídico ─────────────────────────────────────────────────────────────────
+
+enum ProcessoStatus {
+  ATIVO
+  SUSPENSO
+  ENCERRADO
+  ARQUIVADO
+}
+
+enum ProcessoOrigem {
+  MANUAL
+  DATAJUD
+}
+
+model Processo {
+  id                  String         @id @default(cuid())
+  numeroProcesso      String         @unique        // 20 dígitos sem formatação/separadores
+  tribunal            String         @default("TJCE")
+  classe              String?                        // classeProcessual.nome
+  assunto             String?                        // assuntos[0].nome
+  orgaoJulgador       String?
+  grau                String?                        // G1, G2, JE
+  dataAjuizamento     DateTime?      @db.Date
+  status              ProcessoStatus @default(ATIVO)
+  ultimaMovimentacao  String?                        // movimentos[-1].nome
+  dataUltimaMovim     DateTime?
+  resumoPublico       String?        @db.Text        // editável pelo admin, visível no portal
+  observacoesInternas String?        @db.Text        // nunca público
+  origem              ProcessoOrigem @default(MANUAL)
+  ultimaSincronizacao DateTime?
+  ativo               Boolean        @default(true)  // false = arquivado
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+
+  notificacoes Notificacao[]
+  multas       Multa[]
+
+  @@index([status])
+  @@index([ativo])
+  @@map("processos")
+}
+
+enum NotificacaoStatus {
+  EMITIDA
+  ENTREGUE
+  RESPONDIDA
+  CONTESTADA
+  ARQUIVADA
+}
+
+model Notificacao {
+  id               String            @id @default(cuid())
+  processoId       String?
+  processo         Processo?         @relation(fields: [processoId], references: [id])
+  bloco            String                            // A–I
+  unidade          String                            // 101–108 | 201–208 | 301–308 | 401–408
+  motivo           String
+  descricaoInterna String?           @db.Text
+  status           NotificacaoStatus @default(EMITIDA)
+  dataEmissao      DateTime          @db.Date
+  dataEntrega      DateTime?         @db.Date
+  dataResposta     DateTime?         @db.Date
+  anexoUrl         String?
+  anexoNome        String?
+  criadoPorId      String?
+  criadoPor        User?             @relation("NotificacaoCriador", fields: [criadoPorId], references: [id], onDelete: SetNull)
+  ativo            Boolean           @default(true)
+  createdAt        DateTime          @default(now())
+  updatedAt        DateTime          @updatedAt
+
+  @@index([status])
+  @@index([bloco, unidade])
+  @@map("notificacoes")
+}
+
+enum MultaStatus {
+  APLICADA
+  NOTIFICADA
+  CONTESTADA
+  MANTIDA
+  CANCELADA
+  PAGA
+  VENCIDA
+}
+
+model Multa {
+  id               String      @id @default(cuid())
+  processoId       String?
+  processo         Processo?   @relation(fields: [processoId], references: [id])
+  bloco            String
+  unidade          String
+  motivo           String
+  descricaoInterna String?     @db.Text
+  valor            Decimal     @db.Decimal(12, 2)
+  status           MultaStatus @default(APLICADA)
+  dataAplicacao    DateTime    @db.Date
+  dataVencimento   DateTime?   @db.Date
+  dataPagamento    DateTime?   @db.Date
+  anexoUrl         String?
+  anexoNome        String?
+  criadoPorId      String?
+  criadoPor        User?       @relation("MultaCriador", fields: [criadoPorId], references: [id], onDelete: SetNull)
+  ativo            Boolean     @default(true)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  @@index([status])
+  @@index([bloco, unidade])
+  @@map("multas")
+}
+
+enum JuridicoEntidade {
+  PROCESSO
+  NOTIFICACAO
+  MULTA
+  SINCRONIZACAO
+}
+
+model JuridicoAuditoria {
+  id            String           @id @default(cuid())
+  entidade      JuridicoEntidade
+  entidadeId    String
+  acao          String           // CRIACAO | EDICAO | MUDANCA_STATUS | SINCRONIZACAO | ARQUIVAMENTO | CANCELAMENTO | PAGAMENTO
+  valorAnterior Json?
+  valorNovo     Json?
+  usuarioId     String?
+  usuario       User?            @relation("JuridicoAuditor", fields: [usuarioId], references: [id], onDelete: SetNull)
+  observacao    String?          @db.Text
+  createdAt     DateTime         @default(now())
+
+  @@index([entidade, entidadeId])
+  @@index([createdAt])
+  @@map("juridico_auditoria")
 }

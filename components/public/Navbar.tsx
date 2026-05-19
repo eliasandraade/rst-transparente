@@ -14,6 +14,7 @@ const links = [
   { href: "/avisos",      label: "Avisos" },
   { href: "/gestao",      label: "Gestão" },
   { href: "/demandas",    label: "Central de Demandas" },
+  { href: "/juridico",    label: "Jurídico" },
   { href: "/quem-somos",  label: "Quem Somos" },
 ];
 
