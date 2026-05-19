@@ -12,7 +12,6 @@ import {
   Bell,
   AlertTriangle,
   ArrowRight,
-  RefreshCw,
   Plus,
 } from "lucide-react";
 import JuridicoSyncButton from "@/components/admin/juridico/JuridicoSyncButton";

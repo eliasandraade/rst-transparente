@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { syncTodosProcessos } from "@/lib/juridico";
 
-export async function POST(_request: Request) {
+export async function POST() {
   const session = await auth();
   if (!session) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
 

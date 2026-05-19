@@ -6,10 +6,8 @@ import {
   normalizarNumeroProcesso,
   buscarProcessoDataJud,
   registrarAuditoria,
-  validarBloco,
-  validarUnidade,
 } from "@/lib/juridico";
-import type { ProcessoStatus, DemandCategory } from "@prisma/client";
+import type { ProcessoStatus } from "@prisma/client";
 
 const VALID_STATUS = ["ATIVO", "SUSPENSO", "ENCERRADO", "ARQUIVADO"] as const;
 

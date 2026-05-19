@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AlertTriangle, CheckCircle2, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { AlertTriangle, Loader2 } from "lucide-react";
 
 export default function NovoProcessoForm() {
   const router = useRouter();
@@ -129,9 +130,9 @@ export default function NovoProcessoForm() {
             "Cadastrar e sincronizar"
           )}
         </button>
-        <a href="/admin/juridico/processos" className="btn btn-secondary">
+        <Link href="/admin/juridico/processos" className="btn btn-secondary" style={{ minHeight: "auto" }}>
           Cancelar
-        </a>
+        </Link>
       </div>
     </form>
   );

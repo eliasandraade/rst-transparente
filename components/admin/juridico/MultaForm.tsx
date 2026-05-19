@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { AlertTriangle, Loader2 } from "lucide-react";
 
 const BLOCOS = "ABCDEFGHI".split("");
@@ -201,7 +202,7 @@ export default function MultaForm({ processos = [], multaId, defaultValues, modo
         <button type="submit" disabled={loading} className="btn btn-primary">
           {loading ? <><Loader2 className="w-4 h-4 animate-spin" aria-hidden="true" />Salvando...</> : modo === "criar" ? "Aplicar multa" : "Salvar alterações"}
         </button>
-        <a href="/admin/juridico/multas" className="btn btn-secondary">Cancelar</a>
+        <Link href="/admin/juridico/multas" className="btn btn-secondary" style={{ minHeight: "auto" }}>Cancelar</Link>
       </div>
     </form>
   );

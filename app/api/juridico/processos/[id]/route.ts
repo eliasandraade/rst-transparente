@@ -5,7 +5,6 @@ import { z } from "zod";
 import { registrarAuditoria } from "@/lib/juridico";
 import type { ProcessoStatus } from "@prisma/client";
 
-const VALID_STATUS: ProcessoStatus[] = ["ATIVO", "SUSPENSO", "ENCERRADO", "ARQUIVADO"];
 
 const PatchProcessoSchema = z.object({
   status: z.enum(["ATIVO", "SUSPENSO", "ENCERRADO", "ARQUIVADO"]).optional(),

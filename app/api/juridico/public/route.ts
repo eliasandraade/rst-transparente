@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { mascarNumeroProcesso, formatarNumeroProcesso } from "@/lib/juridico";
+import { mascarNumeroProcesso } from "@/lib/juridico";
 
 export async function GET() {
   try {
