@@ -2,7 +2,7 @@
 buildCommand = "npx prisma generate && npm run build"
 
 [deploy]
-startCommand = "npx prisma db push --accept-data-loss && npm run start"
+startCommand = "until npx prisma db push --accept-data-loss --skip-generate; do echo 'DB não disponível ainda, aguardando...'; sleep 3; done && npm run start"
 healthcheckPath = "/"
 healthcheckTimeout = 30
 restartPolicyType = "ON_FAILURE"
