@@ -7,7 +7,7 @@ import DemandaFiltros from "@/components/admin/DemandaFiltros";
 import { Suspense } from "react";
 import type { Metadata } from "next";
 import type { DemandStatus, DemandCategory } from "@prisma/client";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, ChevronRight } from "lucide-react";
 
 export const metadata: Metadata = { title: "Central de Demandas" };
 
@@ -113,55 +113,43 @@ export default async function AdminDemandasPage({ searchParams }: Props) {
         </div>
       ) : (
         <div className="card p-0 overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-[var(--surface-raised)] border-b border-border">
-              <tr>
-                <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--foreground-muted)]">Protocolo</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--foreground-muted)] hidden sm:table-cell">Unidade</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--foreground-muted)]">Título</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--foreground-muted)] hidden md:table-cell">Categoria</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--foreground-muted)] hidden lg:table-cell">Aberta em</th>
-                <th className="text-left px-4 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--foreground-muted)]">Status</th>
-                <th className="text-right px-4 py-3 text-xs font-semibold uppercase tracking-wider text-[var(--foreground-muted)]">Ação</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-border">
-              {demands.map((demand) => (
-                <tr key={demand.id} className="hover:bg-[var(--surface-raised)] transition-colors duration-100">
-                  <td className="px-4 py-3">
-                    <span className="font-mono font-bold text-primary text-xs tabular-nums">
-                      {demand.protocol}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 hidden sm:table-cell text-[var(--foreground-muted)] text-xs">
-                    {demand.unit}
-                  </td>
-                  <td className="px-4 py-3 max-w-xs">
-                    <p className="line-clamp-1 font-medium text-foreground">{demand.title}</p>
-                  </td>
-                  <td className="px-4 py-3 hidden md:table-cell text-xs text-[var(--foreground-muted)]">
-                    {CATEGORY_LABEL[demand.category]}
-                  </td>
-                  <td className="px-4 py-3 hidden lg:table-cell text-xs text-[var(--foreground-muted)] tabular-nums whitespace-nowrap">
-                    {formatarData(demand.createdAt)}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span className={STATUS_BADGE[demand.status]}>
-                      {STATUS_LABEL[demand.status]}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <Link
-                      href={`/admin/demandas/${demand.id}`}
-                      className="btn btn-secondary py-1.5 px-3 text-xs min-h-[auto]"
-                    >
-                      Ver
-                    </Link>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+          {/* Cabeçalho — só visível em telas grandes */}
+          <div className="hidden sm:grid sm:grid-cols-[auto_1fr_auto_auto] gap-x-4 px-4 py-3 bg-[var(--surface-raised)] border-b border-border text-xs font-semibold uppercase tracking-wider text-[var(--foreground-muted)]">
+            <span>Protocolo</span>
+            <span>Título</span>
+            <span>Categoria</span>
+            <span>Status</span>
+          </div>
+
+          <ul className="divide-y divide-border">
+            {demands.map((demand) => (
+              <li key={demand.id}>
+                <Link
+                  href={`/admin/demandas/${demand.id}`}
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-[var(--surface-raised)] transition-colors duration-100 w-full"
+                >
+                  {/* Layout mobile: coluna única */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap mb-0.5">
+                      <span className="font-mono font-bold text-primary text-xs tabular-nums">
+                        {demand.protocol}
+                      </span>
+                      <span className={STATUS_BADGE[demand.status]}>
+                        {STATUS_LABEL[demand.status]}
+                      </span>
+                    </div>
+                    <p className="text-sm font-medium text-foreground truncate">
+                      {demand.title}
+                    </p>
+                    <p className="text-xs text-[var(--foreground-muted)] mt-0.5">
+                      {demand.unit} · {CATEGORY_LABEL[demand.category]} · {formatarData(demand.createdAt)}
+                    </p>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-[var(--foreground-subtle)] flex-shrink-0" aria-hidden="true" />
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
       )}
     </div>
