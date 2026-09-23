@@ -39,7 +39,7 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-    ports:
+    expose:
       - "3000"
     networks:
       - rst-internal
