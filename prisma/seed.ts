@@ -7,9 +7,20 @@ async function main() {
   console.log("🌱 Iniciando seed do banco de dados...");
 
   // ─── Admin master ────────────────────────────────────────────────────────────
-  const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@condominio.com";
-  const adminSenha = process.env.SEED_ADMIN_PASSWORD ?? "Mudar@123";
+  const isProduction = process.env.NODE_ENV === "production";
+  const adminEmail =
+    process.env.SEED_ADMIN_EMAIL ??
+    (isProduction ? null : "admin@condominio.com");
+  const adminSenha =
+    process.env.SEED_ADMIN_PASSWORD ??
+    (isProduction ? null : "Mudar@123");
   const adminNome = process.env.SEED_ADMIN_NAME ?? "Administrador";
+
+  if (!adminEmail || !adminSenha) {
+    throw new Error(
+      "SEED_ADMIN_EMAIL e SEED_ADMIN_PASSWORD são obrigatórios em produção."
+    );
+  }
 
   const senhaHash = await bcrypt.hash(adminSenha, 12);
 
@@ -89,10 +100,8 @@ async function main() {
   );
 
   console.log("\n🎉 Seed concluído com sucesso!");
-  console.log(`\n📋 Credenciais de acesso:`);
-  console.log(`   Email: ${adminEmail}`);
-  console.log(`   Senha: ${adminSenha}`);
-  console.log(`\n⚠️  Altere a senha após o primeiro login!`);
+  console.log(`\n📋 Admin inicial configurado: ${adminEmail}`);
+  console.log("\n⚠️  A senha não é exibida nos logs. Altere-a após o primeiro login.");
 }
 
 main()
