@@ -14,7 +14,7 @@ const ROLES_CRIÁVEIS: Record<string, string[]> = {
 
 const criarUsuarioSchema = z.object({
   name: z.string().min(3, "Nome deve ter pelo menos 3 caracteres"),
-  email: z.string().email("E-mail inválido"),
+  email: z.string().trim().toLowerCase().email("E-mail inválido"),
   password: z.string().min(8, "Senha deve ter pelo menos 8 caracteres"),
   role: z.enum(["SINDICO", "GESTAO", "CONSELHO"]),
 });

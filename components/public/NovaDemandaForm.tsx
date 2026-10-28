@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Paperclip, X, Loader2 } from "lucide-react";
 
 const CATEGORIAS = [
@@ -33,13 +33,20 @@ export default function NovaDemandaForm({ onSuccess }: NovaDemandaFormProps) {
   const [attachmentName, setAttachmentName] = useState<string | null>(null);
   const [descCount, setDescCount] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
+  const errorRef = useRef<HTMLDivElement>(null);
+
+  // No celular o botão fica longe do topo — rola até o erro para o morador vê-lo
+  useEffect(() => {
+    if (error) errorRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [error]);
 
   async function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    const allowed = ["image/jpeg", "image/png", "application/pdf"];
-    if (!allowed.includes(file.type)) {
+    // Alguns celulares enviam o arquivo sem MIME; o servidor valida o tipo real pelos bytes
+    const allowed = ["image/jpeg", "image/png", "image/webp", "application/pdf"];
+    if (!allowed.includes(file.type) && !/\.(jpe?g|png|webp|pdf)$/i.test(file.name)) {
       setError("Formato inválido. Use JPG, PNG ou PDF.");
       return;
     }
@@ -53,13 +60,17 @@ export default function NovaDemandaForm({ onSuccess }: NovaDemandaFormProps) {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
-      if (!res.ok) throw new Error("Falha no upload");
-      const json = await res.json();
+      const res = await fetch("/api/demandas/anexo", { method: "POST", body: formData });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        setError(json.error ?? "Erro ao enviar arquivo. Tente novamente.");
+        if (fileRef.current) fileRef.current.value = "";
+        return;
+      }
       setAttachmentUrl(json.url);
       setAttachmentName(file.name);
     } catch {
-      setError("Erro ao enviar arquivo. Tente novamente.");
+      setError("Erro de conexão ao enviar arquivo. Tente novamente.");
     } finally {
       setUploadingFile(false);
     }
@@ -113,6 +124,7 @@ export default function NovaDemandaForm({ onSuccess }: NovaDemandaFormProps) {
     <form onSubmit={handleSubmit} className="space-y-6">
       {error && (
         <div
+          ref={errorRef}
           className="flex items-start gap-3 bg-[var(--danger-subtle)] border border-border rounded-lg px-4 py-3 text-sm text-[var(--danger)]"
           role="alert"
         >
@@ -136,6 +148,8 @@ export default function NovaDemandaForm({ onSuccess }: NovaDemandaFormProps) {
               name="requesterName"
               type="text"
               required
+              minLength={3}
+              maxLength={100}
               autoComplete="name"
               className="input"
               placeholder="Seu nome completo"
@@ -167,6 +181,8 @@ export default function NovaDemandaForm({ onSuccess }: NovaDemandaFormProps) {
               name="phone"
               type="tel"
               required
+              minLength={8}
+              maxLength={20}
               autoComplete="tel"
               className="input"
               placeholder="(11) 9 8765-4321"
@@ -226,6 +242,7 @@ export default function NovaDemandaForm({ onSuccess }: NovaDemandaFormProps) {
               name="title"
               type="text"
               required
+              minLength={5}
               maxLength={120}
               className="input"
               placeholder="Resumo em poucas palavras"
@@ -242,6 +259,7 @@ export default function NovaDemandaForm({ onSuccess }: NovaDemandaFormProps) {
               name="description"
               required
               rows={5}
+              minLength={10}
               maxLength={2000}
               className="textarea"
               placeholder="Descreva o problema com detalhes: local, quando começou, frequência..."
@@ -288,12 +306,12 @@ export default function NovaDemandaForm({ onSuccess }: NovaDemandaFormProps) {
               {uploadingFile ? "Enviando..." : "Foto ou documento"}
             </span>
             <span className="text-xs text-[var(--foreground-subtle)] mt-1">
-              JPG, PNG ou PDF · máx. 10MB
+              JPG, PNG, WEBP ou PDF · máx. 10MB
             </span>
             <input
               ref={fileRef}
               type="file"
-              accept=".jpg,.jpeg,.png,.pdf"
+              accept=".jpg,.jpeg,.png,.webp,.pdf"
               className="sr-only"
               onChange={handleFileChange}
               disabled={uploadingFile}

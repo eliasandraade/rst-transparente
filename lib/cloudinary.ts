@@ -31,6 +31,33 @@ export async function uploadParecer(
   });
 }
 
+export async function uploadAnexoDemanda(
+  buffer: Buffer,
+  filename: string,
+  isPdf: boolean
+): Promise<{ url: string; publicId: string }> {
+  return new Promise((resolve, reject) => {
+    const uploadStream = cloudinary.uploader.upload_stream(
+      {
+        folder: "rst-transparente/demandas",
+        // PDF vai como "raw" (download direto); fotos como "image"
+        resource_type: isPdf ? "raw" : "image",
+        ...(isPdf ? { format: "pdf" } : {}),
+        public_id: `${Date.now()}-${filename.replace(/\.[^.]+$/, "").replace(/[^a-zA-Z0-9]/g, "-").slice(0, 80)}`,
+        overwrite: false,
+      },
+      (error, result) => {
+        if (error || !result) {
+          reject(error || new Error("Upload falhou"));
+          return;
+        }
+        resolve({ url: result.secure_url, publicId: result.public_id });
+      }
+    );
+    uploadStream.end(buffer);
+  });
+}
+
 export async function deleteParecer(publicId: string): Promise<void> {
   await cloudinary.uploader.destroy(publicId, { resource_type: "raw" });
 }

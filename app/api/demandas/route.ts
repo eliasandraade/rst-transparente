@@ -25,7 +25,13 @@ const CreateDemandSchema = z.object({
   ]),
   title: z.string().min(5, "Título muito curto").max(120),
   description: z.string().min(10, "Descrição muito curta").max(2000),
-  attachmentUrl: z.string().url().optional().nullable(),
+  // Só aceita anexos enviados pela rota /api/demandas/anexo (Cloudinary)
+  attachmentUrl: z
+    .string()
+    .url()
+    .refine((u) => u.startsWith("https://res.cloudinary.com/"), "Anexo inválido")
+    .optional()
+    .nullable(),
   attachmentName: z.string().max(200).optional().nullable(),
 });
 

@@ -20,8 +20,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) return null;
 
+        // Teclado do celular costuma pôr maiúscula ou espaço no fim do e-mail
+        const email = (credentials.email as string).trim().toLowerCase();
+
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email as string },
+          where: { email },
         });
 
         if (!user || !user.ativo) return null;
