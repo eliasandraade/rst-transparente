@@ -128,6 +128,12 @@ jobs:
           check /financeiro 308 -H "Host: legado.test"
           case "$(location /demandas/acompanhar/SMK-2026-AAAAAA -H "Host: legado.test")" in */condominio-smoke/demandas/acompanhar/SMK-2026-AAAAAA) ;; *) echo "redirecionamento legado errado"; exit 1;; esac
           check /financeiro 404
+          # Cabeçalhos de segurança: CSP com nonce, HSTS, frame DENY, sem x-powered-by
+          curl -s -D /tmp/page.headers -o /dev/null http://localhost:3100/condominio-smoke
+          grep -qi "^content-security-policy: .*'nonce-.*frame-ancestors 'none'" /tmp/page.headers
+          grep -qi "^strict-transport-security: max-age=31536000" /tmp/page.headers
+          grep -qi "^x-frame-options: DENY" /tmp/page.headers
+          if grep -qi "^x-powered-by" /tmp/page.headers; then echo "x-powered-by exposto"; exit 1; fi
           # Orken ID não configurado: a entrada volta ao login do condomínio
           case "$(location /entrar/condominio-smoke)" in */condominio-smoke/admin/login\?orken=desligado) ;; *) echo "entrada sem Orken ID errada"; exit 1;; esac
           # Escrita de outra origem
