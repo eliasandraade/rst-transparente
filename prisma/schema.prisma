@@ -23,14 +23,20 @@ model User {
   password             String
   role                 Role                @default(CONSELHO)
   ativo                Boolean             @default(true)
+  /// `sub` do Orken ID depois do vínculo; daí em diante a senha local não entra mais.
+  /// Único por organização: a mesma pessoa pode ser da equipe de vários condomínios.
+  orkenSubject         String?             @db.Uuid
+  orkenLinkedAt        DateTime?
   createdAt            DateTime            @default(now())
   updatedAt            DateTime            @updatedAt
+  sessions             StaffSession[]
   demandUpdates        DemandUpdate[]
   notificacoesEmitidas Notificacao[]       @relation("NotificacaoCriador")
   multasAplicadas      Multa[]             @relation("MultaCriador")
   juridicoAuditorias   JuridicoAuditoria[] @relation("JuridicoAuditor")
 
   @@unique([organizationId, email])
+  @@unique([organizationId, orkenSubject])
   @@index([organizationId])
   @@map("users")
 }
@@ -565,7 +571,87 @@ model Organization {
   notificacoes       Notificacao[]
   multas             Multa[]
   juridicoAuditorias JuridicoAuditoria[]
+  staffSessions      StaffSession[]
+  staffAuditEvents   StaffAuditEvent[]
   configPortal       ConfigPortal?
 
   @@map("organizations")
+}
+
+// ─── Sessões e Orken ID (docs/orken-cond/identidade.md) ──────────────────────
+
+enum AuthMethod {
+  PASSWORD
+  ORKEN_ID
+}
+
+/// Sessão da equipe: cookie opaco no navegador, só o hash aqui. Vale só na
+/// organização em que foi aberta; papel e status da conta são relidos a cada requisição.
+model StaffSession {
+  id             String        @id @default(uuid()) @db.Uuid
+  organizationId String?       @db.Uuid
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  userId         String
+  user           User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tokenHash      String        @unique
+  csrfHash       String
+  authMethod     AuthMethod
+  /// ID token do login pelo Orken ID: `id_token_hint` do logout federado.
+  idToken        String?       @db.Text
+  createdAt      DateTime      @default(now())
+  lastSeenAt     DateTime      @default(now())
+  expiresAt      DateTime
+  revokedAt      DateTime?
+  revokedReason  String?
+
+  @@index([organizationId])
+  @@index([userId])
+  @@map("staff_sessions")
+}
+
+/// Auditoria de acesso da equipe (entrada, vínculo, saída, recusa da Platform). Sem
+/// senha, token, código ou segredo; o `sub` do Orken ID é um UUID opaco.
+model StaffAuditEvent {
+  id             String        @id @default(uuid()) @db.Uuid
+  organizationId String?       @db.Uuid
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  action         String
+  userId         String?
+  subject        String?       @db.Uuid
+  detail         Json?
+  createdAt      DateTime      @default(now())
+
+  @@index([organizationId, createdAt])
+  @@map("staff_audit_events")
+}
+
+/// Versão de acesso (uma linha): sobe quando o feed da Platform avisa uma mudança,
+/// e as respostas de acesso guardadas em memória deixam de valer em todas as réplicas.
+model PlatformAccessState {
+  id            Int      @id @default(1)
+  accessVersion Int      @default(0)
+  updatedAt     DateTime @updatedAt
+
+  @@map("platform_access_state")
+}
+
+/// Cursor do feed de eventos da Platform, movido só por compare-and-set.
+model PlatformEventCursor {
+  consumer  String   @id
+  cursor    String
+  failures  Int      @default(0)
+  lastError String?
+  updatedAt DateTime @updatedAt
+
+  @@map("platform_event_cursors")
+}
+
+/// Recibo por evento: reentrega do feed não faz nada (14 dias).
+model PlatformEventReceipt {
+  eventId    String   @id @db.Uuid
+  type       String
+  receivedAt DateTime @default(now())
+
+  @@index([receivedAt])
+  @@map("platform_event_receipts")
 }

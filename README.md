@@ -1,128 +1,61 @@
-# Portal da Transparência
-## Condomínio Residencial Santíssima Trindade
+# Orken COND
 
-Portal web institucional para publicação de informações financeiras e pareceres do Conselho Fiscal.
+Gestão, transparência e relacionamento condominial da Andrade Systems, parte da Orken Platform. Cada condomínio é uma
+organização com o próprio portal: contas publicadas pelo conselho, Central de Demandas com protocolo, avisos,
+enquetes, obras, propostas, jurídico e a gestão no mesmo lugar.
 
----
+| Caminho | O que é |
+|---|---|
+| `/` | Página do Orken COND |
+| `/{slug}` | Portal do condomínio (moradores, sem conta) |
+| `/{slug}/admin` | Gestão do condomínio (equipe) |
+| `/entrar/{slug}` | Entrada da equipe pela conta Orken (Minha Orken → condomínio → Orken COND) |
+
+Arquitetura, isolamento entre condomínios e migração: [docs/orken-cond/arquitetura.md](docs/orken-cond/arquitetura.md).
+Sessões, Orken ID e Platform: [docs/orken-cond/identidade.md](docs/orken-cond/identidade.md).
 
 ## Stack
 
-- **Framework:** Next.js 15 (App Router, TypeScript)
-- **Banco de dados:** PostgreSQL (Railway)
-- **ORM:** Prisma 5
-- **Autenticação:** NextAuth.js v5 (Credentials)
-- **Estilização:** Tailwind CSS 3
-- **Gráficos:** Recharts
-- **Storage PDF:** Cloudinary
-- **Deploy:** Railway
+Next.js 15 (App Router), React 19, TypeScript, Prisma 5 + PostgreSQL (RLS por organização), Redis (rate limit e
+transações de login), Tailwind, Cloudinary, Vitest. Deploy no Railway.
 
----
+## Desenvolvimento
 
-## Setup local
-
-### 1. Instale as dependências
 ```bash
 npm install
-```
-
-### 2. Configure as variáveis de ambiente
-```bash
-cp .env.example .env
-# Edite .env com suas credenciais
-```
-
-### 3. Configure o banco de dados (Railway ou local)
-```bash
-# Cria/sincroniza as tabelas
-npm run db:push
-
-# Popula categorias e admin inicial
-npm run db:seed
-```
-
-### 4. Rode em desenvolvimento
-```bash
+cp .env.example .env.local      # DATABASE_URL e REDIS_URL de um banco/Redis locais
+npm run db:migrate              # migrations versionadas (nunca db push)
+ALLOW_DEMO_SEED=1 SEED_ADMIN_EMAIL=... SEED_ADMIN_PASSWORD=... npm run db:seed:demo
 npm run dev
 ```
 
-Acesse em: http://localhost:3000
+O seed de demonstração cria só a organização `condominio-demo`, exige senha de 12+ caracteres vinda do ambiente,
+nunca roda em produção e nunca imprime credenciais. Portal em `http://localhost:3000/condominio-demo`.
 
----
-
-## Variáveis de ambiente obrigatórias
-
-| Variável | Descrição |
-|----------|-----------|
-| `DATABASE_URL` | URL de conexão PostgreSQL |
-| `NEXTAUTH_SECRET` | Secret para sessões (mín. 32 chars) |
-| `NEXTAUTH_URL` | URL base da aplicação |
-| `CLOUDINARY_CLOUD_NAME` | Nome do cloud no Cloudinary |
-| `CLOUDINARY_API_KEY` | API Key do Cloudinary |
-| `CLOUDINARY_API_SECRET` | API Secret do Cloudinary |
-
-### Variáveis opcionais (seed)
-| Variável | Padrão |
-|----------|--------|
-| `SEED_ADMIN_EMAIL` | admin@condominio.com |
-| `SEED_ADMIN_PASSWORD` | Mudar@123 |
-| `SEED_ADMIN_NAME` | Administrador |
-
----
-
-## Estrutura de rotas
-
-### Públicas
-| Rota | Página |
-|------|--------|
-| `/` | Home com cards de acesso rápido |
-| `/financeiro` | Receitas e despesas por período |
-| `/metricas` | Painel de KPIs e gráficos |
-| `/parecer` | Pareceres do Conselho Fiscal |
-
-### Administrativas (requer login)
-| Rota | Página |
-|------|--------|
-| `/admin/login` | Login do Conselho Fiscal |
-| `/admin/dashboard` | Painel com resumo |
-| `/admin/lancamentos` | Lista e gestão de lançamentos |
-| `/admin/lancamentos/novo` | Novo lançamento |
-| `/admin/lancamentos/[id]` | Editar lançamento |
-| `/admin/pareceres` | Lista e gestão de pareceres |
-| `/admin/pareceres/novo` | Novo parecer |
-| `/admin/pareceres/[id]` | Editar parecer |
-
----
-
-## Scripts disponíveis
+## Testes
 
 ```bash
-npm run dev          # Desenvolvimento
-npm run build        # Build de produção
-npm run start        # Iniciar produção
-npm run lint         # Verificar ESLint
-npm run db:push      # Sincronizar schema com banco
-npm run db:seed      # Popular banco com dados iniciais
-npm run db:studio    # Abrir Prisma Studio (GUI do banco)
+npm run lint && npm run typecheck && npm test
+DATABASE_URL=... REDIS_URL=... npm run test:integration   # banco DESCARTÁVEL: a suíte grava e apaga dados
 ```
 
----
+O CI (GitHub Actions) roda lint, tipos, testes de unidade, migrations num banco limpo e numa instalação antiga com
+dados, a suíte de integração duas vezes (dono das tabelas e papel `cond_app` sem `BYPASSRLS`), o build e o servidor
+de produção de pé.
 
-## Deploy no Railway
+## Variáveis
 
-1. Crie um novo projeto no Railway
-2. Adicione um serviço PostgreSQL
-3. Adicione um serviço de aplicação conectado ao repositório
-4. Configure as variáveis de ambiente (copie de `.env.example`)
-5. O deploy é automático a cada push
+| Variável | Uso |
+|---|---|
+| `DATABASE_URL` | PostgreSQL |
+| `REDIS_URL` | Rate limit e transações de login (obrigatório em produção: sem Redis, falha fechado) |
+| `CLIENT_IP_HEADER` | Cabeçalho com o IP real do cliente (`x-real-ip` no Railway) |
+| `CLOUDINARY_*` | Arquivos |
+| `DATAJUD_API_KEY` | Sincronização de processos (tribunal por organização) |
+| `LEGACY_HOST_ORGANIZATION` | Host antigo de um condomínio só → `308` para `/{slug}/...` |
+| `ORKEN_*`, `PLATFORM_API_URL`, `APP_BASE_URL` | Orken ID e Platform: todas ou nenhuma (`.env.example`) |
 
-**NEXTAUTH_URL** deve ser a URL pública gerada pelo Railway.
+## Deploy
 
----
-
-## Primeiro acesso
-
-Após o seed, acesse `/admin/login` com:
-- **Email:** conforme `SEED_ADMIN_EMAIL`
-- **Senha:** conforme `SEED_ADMIN_PASSWORD`
-
-**Altere a senha após o primeiro login.**
+`railway.toml`: o start roda `scripts/db-migrate.mjs` (migrations) e sobe o app; saúde em `/api/health`. Ordem de um
+deploy com migration e conferências: `docs/orken-cond/arquitetura.md`.

@@ -38,10 +38,20 @@ export default async function PerfilPage() {
         </div>
       </div>
 
-      {/* Alterar senha */}
+      {/* Alterar senha: conta vinculada usa a senha e o segundo fator da conta Orken */}
       <div className="card">
-        <h2 className="text-lg font-semibold mb-4">Alterar senha</h2>
-        <AlterarSenhaForm />
+        <h2 className="text-lg font-semibold mb-4">{session?.user.orkenLinked ? "Segurança da conta" : "Alterar senha"}</h2>
+        {session?.user.orkenLinked ? (
+          <p className="text-sm text-muted-foreground">
+            Você entra pela conta Orken. Senha e verificação em duas etapas são gerenciadas em{" "}
+            <a className="underline underline-offset-4" href="https://account.orken.com.br" target="_blank" rel="noreferrer">
+              account.orken.com.br
+            </a>
+            .
+          </p>
+        ) : (
+          <AlterarSenhaForm />
+        )}
       </div>
     </div>
   );

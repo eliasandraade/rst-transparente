@@ -1,10 +1,8 @@
-import NextAuth from "next-auth";
-import { authConfig } from "@/auth.config";
 import { NextResponse, type NextRequest } from "next/server";
 import { ORGANIZATION_HEADER, isOrganizationSlug } from "@/lib/tenant-path";
+import { CSRF_COOKIE, CSRF_HEADER, SESSION_COOKIE } from "@/lib/session-cookies";
 
-// Runtime Edge: só a configuração sem provedor (auth.config.ts); nada de Prisma ou Redis aqui.
-const { auth } = NextAuth(authConfig);
+// Runtime Edge: só caminho, cabeçalhos e cookies; sessão e conta são conferidas no servidor (lib/staff.ts).
 
 /**
  * Host legado de um condomínio só ("www.transparenciarst.com.br=santissima-trindade"):
@@ -21,9 +19,24 @@ function legacyOrganization(host: string | null): string | null {
 }
 
 /** Caminhos do produto que nunca são de um condomínio. */
-const PRODUCT_PATHS = /^\/(?:api\/(?:auth|health)(?:\/|$)|_next\/|favicon|robots\.txt|sitemap\.xml)/;
+const PRODUCT_PATHS = /^\/(?:api\/(?:auth|health)(?:\/|$)|entrar\/|_next\/|brand\/|favicon|robots\.txt|sitemap\.xml)/;
+const SAFE_METHODS = new Set(["GET", "HEAD", "OPTIONS"]);
 
-export default auth((req) => {
+function sameOrigin(req: NextRequest): boolean {
+  const origin = req.headers.get("origin");
+  if (!origin) return req.headers.get("sec-fetch-site") !== "cross-site";
+  try {
+    return new URL(origin).host === req.headers.get("host");
+  } catch {
+    return false;
+  }
+}
+
+function forbidden(message: string): NextResponse {
+  return NextResponse.json({ error: message }, { status: 403 });
+}
+
+export default function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
 
   const legacy = legacyOrganization(req.headers.get("host"));
@@ -42,20 +55,30 @@ export default auth((req) => {
   headers.set(ORGANIZATION_HEADER, slug);
 
   const rest = pathname.slice(slug.length + 1) || "/";
-  const isAdminRoute = rest === "/admin" || rest.startsWith("/admin/");
-  const isLoginPage = rest === "/admin/login";
-  // Sessão só vale no condomínio em que foi aberta; papel e status são conferidos no servidor.
-  const signedInHere = req.auth?.user?.organizationSlug === slug;
+  const hasSession = !!req.cookies.get(SESSION_COOKIE)?.value;
 
-  // Só o atalho para quem não tem sessão aqui: a conta é conferida no banco pelas páginas
+  // Escritas na API: só do próprio site; com sessão, o cabeçalho de CSRF precisa
+  // repetir o cookie (que outro site não lê nem grava, `__Host-`).
+  if (rest.startsWith("/api/") && !SAFE_METHODS.has(req.method)) {
+    if (!sameOrigin(req)) return forbidden("Origem não permitida.");
+    // O login abre uma sessão nova; basta a origem (sessão velha não bloqueia entrar de novo).
+    if (hasSession && rest !== "/api/auth/login") {
+      const cookie = req.cookies.get(CSRF_COOKIE)?.value ?? "";
+      const header = req.headers.get(CSRF_HEADER) ?? "";
+      if (!cookie || cookie !== header) return forbidden("Sessão expirada. Recarregue a página.");
+    }
+  }
+
+  // Atalho para quem nem tem sessão: a conta é conferida no banco pelas páginas
   // (requireStaff), e o login manda ao painel só quem o banco aceitar (login/layout.tsx).
-  if (isAdminRoute && !isLoginPage && !signedInHere) {
+  const isAdminRoute = rest === "/admin" || rest.startsWith("/admin/");
+  if (isAdminRoute && rest !== "/admin/login" && !hasSession) {
     const loginUrl = new URL(`/${slug}/admin/login`, req.url);
     loginUrl.searchParams.set("callbackUrl", rest);
     return NextResponse.redirect(loginUrl);
   }
   return NextResponse.next({ request: { headers } });
-});
+}
 
 export const config = {
   matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],

@@ -11,6 +11,7 @@
 import NextLink from "next/link";
 import { useParams, usePathname as useNextPathname, useRouter as useNextRouter } from "next/navigation";
 import { forwardRef, type ComponentProps } from "react";
+import { CSRF_COOKIE, CSRF_HEADER } from "@/lib/session-cookies";
 
 /** Slug do condomínio da página (`/{slug}/...`), ou null fora de um condomínio. */
 export function useOrgSlug(): string | null {
@@ -56,15 +57,28 @@ export function useOrgPathname(): string {
   return pathname.startsWith(`/${slug}/`) ? pathname.slice(slug.length + 1) : pathname;
 }
 
+function csrfToken(): string | null {
+  for (const part of document.cookie.split(";")) {
+    const [name, ...value] = part.trim().split("=");
+    if (name === CSRF_COOKIE) return decodeURIComponent(value.join("="));
+  }
+  return null;
+}
+
 /**
  * fetch do portal: "/api/x" vira "/{slug}/api/x", com o slug lido do caminho da
  * página no momento da chamada (só em evento ou efeito, nunca durante o render).
+ * Escritas levam o cabeçalho de CSRF com o valor do cookie da sessão.
  */
 export function orgFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
   if (typeof input === "string" && input.startsWith("/api/")) {
     const slug = window.location.pathname.split("/")[1];
     if (!slug) return Promise.reject(new Error("fora do portal de um condomínio"));
-    return fetch(`/${slug}${input}`, init);
+    const method = (init?.method ?? "GET").toUpperCase();
+    const csrf = method === "GET" || method === "HEAD" ? null : csrfToken();
+    const headers = new Headers(init?.headers);
+    if (csrf) headers.set(CSRF_HEADER, csrf);
+    return fetch(`/${slug}${input}`, { ...init, headers });
   }
   return fetch(input, init);
 }

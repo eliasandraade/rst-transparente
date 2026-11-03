@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "@/lib/org-navigation";
-import { useOrgPathname as usePathname, prefixOrgPath, useOrgSlug } from "@/lib/org-navigation";
-import { signOut } from "next-auth/react";
+import { useOrgPathname as usePathname, useOrgSlug } from "@/lib/org-navigation";
+import { signOutStaff } from "@/lib/sign-out";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import {
@@ -183,7 +183,7 @@ export default function AdminMobileHeader({ userName, userRole }: Props) {
             Portal público
           </Link>
           <button
-            onClick={() => signOut({ callbackUrl: prefixOrgPath(orgSlug, "/admin/login") })}
+            onClick={() => signOutStaff(orgSlug)}
             style={{ minHeight: "auto" }}
             className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--danger)] hover:bg-[var(--danger-subtle)] w-full transition-colors duration-150"
           >
