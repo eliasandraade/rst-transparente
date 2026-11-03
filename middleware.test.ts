@@ -14,6 +14,7 @@ const forwarded = (res: Response) => res.headers.get("x-middleware-request-x-con
 
 afterEach(() => {
   delete process.env.LEGACY_HOST_ORGANIZATION;
+  delete process.env.LEGACY_HOST_TARGET;
 });
 
 describe("middleware", () => {
@@ -63,6 +64,26 @@ describe("middleware", () => {
       expect(res.headers.get("x-content-type-options")).toBe("nosniff");
       expect(res.headers.get("x-frame-options")).toBe("DENY");
     }
+  });
+
+  it("cutover: host legado manda tudo para o mesmo caminho na origem do produto", () => {
+    process.env.LEGACY_HOST_ORGANIZATION = "legado.test=condominio-a";
+    process.env.LEGACY_HOST_TARGET = "https://cond.test";
+    const legacy = (path: string, method = "GET") => middleware(request(path, { method, headers: { host: "legado.test" } }));
+    const expectTarget = (path: string, target: string) => {
+      const res = legacy(path);
+      expect(res.status).toBe(308);
+      expect(res.headers.get("location")).toBe(target);
+    };
+    expectTarget("/", "https://cond.test/condominio-a");
+    expectTarget("/financeiro?periodo=2026-06", "https://cond.test/condominio-a/financeiro?periodo=2026-06");
+    expectTarget("/demandas/acompanhar/RST-2026-K7M9Q2", "https://cond.test/condominio-a/demandas/acompanhar/RST-2026-K7M9Q2");
+    expectTarget("/condominio-a/admin/login", "https://cond.test/condominio-a/admin/login");
+    expectTarget("/entrar/condominio-a", "https://cond.test/entrar/condominio-a");
+    // 308 mantém o método: um POST antigo segue como POST (e a checagem de origem vale lá).
+    expect(legacy("/api/demandas", "POST").headers.get("location")).toBe("https://cond.test/condominio-a/api/demandas");
+    // Outro host não é afetado.
+    expect(middleware(request("/condominio-a")).status).toBe(200);
   });
 
   it("host legado: 308 para o caminho do condomínio, exceto rotas do produto", () => {

@@ -162,6 +162,15 @@ PRs em sequência, cada um com CI real verde:
 5. Platform e Hub: organização RST, produto COND, clientes, entrada, production-watch.
 6. Contract: `organizationId` obrigatório, papel de banco sem privilégios de dono, cutover de domínio.
 
+### Cutover do domínio
+
+1. DNS de `cond.orken.com.br` (CNAME e TXT de verificação na zona `orken.com.br`) e certificado emitido pelo Railway.
+2. `node scripts/platform-link.mjs santissima-trindade --apply`: o login do RST ganha a entrada pela conta Orken.
+3. `LEGACY_HOST_TARGET=https://cond.orken.com.br`: `www.transparenciarst.com.br/<caminho>` passa a responder `308` para o
+   mesmo caminho em `cond.orken.com.br/santissima-trindade` (rotas do produto, como `/entrar/...`, sem o slug). Links e
+   QR codes antigos seguem valendo. O domínio antigo continua apontado e com certificado: remover só por decisão
+   do condomínio.
+
 ## 8. Rollback
 
 Cada migration é aditiva até o contract. Voltar o deploy de um PR anterior roda com o esquema novo. O contract só
