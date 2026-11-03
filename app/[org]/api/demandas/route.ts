@@ -11,6 +11,8 @@ import {
   getClientIp,
 } from "@/lib/demandas";
 import { RATE_LIMITS, rateLimit, rateLimitResponseBody } from "@/lib/rate-limit";
+import { parseAttachmentRef } from "@/lib/files";
+import { errorSummary, pseudonymizeIp } from "@/lib/privacy";
 
 const VALID_STATUSES = ["RECEBIDA", "EM_ANALISE", "EM_ANDAMENTO", "RESOLVIDA", "ENCERRADA_SEM_ACAO"] as const;
 const VALID_CATEGORIES = ["MANUTENCAO", "SEGURANCA", "LIMPEZA", "FINANCEIRO", "BARULHO", "ILUMINACAO", "VAZAMENTO", "SUGESTAO", "RECLAMACAO", "OUTROS"] as const;
@@ -26,13 +28,8 @@ const CreateDemandSchema = z.object({
   ]),
   title: z.string().min(5, "Título muito curto").max(120),
   description: z.string().min(10, "Descrição muito curta").max(2000),
-  // Só aceita anexos enviados pela rota /api/demandas/anexo (Cloudinary)
-  attachmentUrl: z
-    .string()
-    .url()
-    .refine((u) => u.startsWith("https://res.cloudinary.com/"), "Anexo inválido")
-    .optional()
-    .nullable(),
+  // Referência devolvida por /api/demandas/anexo; conferida contra a organização na rota.
+  attachmentRef: z.string().max(300).optional().nullable(),
   attachmentName: z.string().max(200).optional().nullable(),
 });
 
@@ -45,6 +42,10 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const data = CreateDemandSchema.parse(body);
+    // Anexo só desta organização: a referência de outra (ou uma URL qualquer) é recusada.
+    if (data.attachmentRef && !parseAttachmentRef(data.attachmentRef, org.id)) {
+      return NextResponse.json({ error: "Anexo inválido" }, { status: 400 });
+    }
 
     const year = new Date().getFullYear();
     const plainAccessCode = generateCode(6);
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const ipAddress = getClientIp(request);
+    const ipAddress = pseudonymizeIp(org.id, getClientIp(request));
     const userAgent = request.headers.get("user-agent") ?? undefined;
 
     const demand = await organizationTransaction(org.id, async (tx) => {
@@ -85,7 +86,7 @@ export async function POST(request: Request) {
           category: data.category,
           title: sanitizeText(data.title),
           description: sanitizeText(data.description),
-          attachmentUrl: data.attachmentUrl || null,
+          attachmentUrl: data.attachmentRef || null,
           attachmentName: data.attachmentName || null,
           ipAddress,
           userAgent,
@@ -117,7 +118,7 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    console.error("[POST /api/demandas]", err);
+    console.error("[POST /api/demandas]", errorSummary(err));
     return NextResponse.json(
       { error: "Erro ao registrar demanda." },
       { status: 500 }
@@ -165,7 +166,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(demands);
   } catch (err) {
-    console.error("[GET /api/demandas]", err);
+    console.error("[GET /api/demandas]", errorSummary(err));
     return NextResponse.json(
       { error: "Erro ao buscar demandas." },
       { status: 500 }

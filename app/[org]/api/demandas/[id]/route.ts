@@ -1,15 +1,17 @@
 import { NextResponse } from "next/server";
 import { staffSession, can, forbidden } from "@/lib/staff";
-import { organizationTransaction, requireTenant, tenantDb } from "@/lib/tenant";
+import { organizationTransaction, requireTenant } from "@/lib/tenant";
+import { attachmentLink } from "@/lib/files";
 import { z } from "zod";
 import { sanitizeText } from "@/lib/demandas";
+import { errorSummary } from "@/lib/privacy";
 
 interface Params {
   params: Promise<{ id: string }>;
 }
 
 export async function GET(_request: Request, { params }: Params) {
-  const db = await tenantDb();
+  const { org, db } = await requireTenant();
   const session = await staffSession();
   if (!session) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
@@ -33,9 +35,9 @@ export async function GET(_request: Request, { params }: Params) {
       return NextResponse.json({ error: "Demanda não encontrada" }, { status: 404 });
     }
 
-    return NextResponse.json(demand);
+    return NextResponse.json({ ...demand, attachmentUrl: attachmentLink(demand.attachmentUrl, org.id) });
   } catch (err) {
-    console.error("[GET /api/demandas/[id]]", err);
+    console.error("[GET /api/demandas/[id]]", errorSummary(err));
     return NextResponse.json({ error: "Erro ao buscar demanda." }, { status: 500 });
   }
 }
@@ -106,7 +108,7 @@ export async function PUT(request: Request, { params }: Params) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues[0].message }, { status: 400 });
     }
-    console.error("[PUT /api/demandas/[id]]", err);
+    console.error("[PUT /api/demandas/[id]]", errorSummary(err));
     return NextResponse.json({ error: "Erro ao atualizar demanda." }, { status: 500 });
   }
 }

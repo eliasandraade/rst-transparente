@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
-import { tenantDb } from "@/lib/tenant";
+import { requireTenant } from "@/lib/tenant";
+import { pseudonymizeIp } from "@/lib/privacy";
 import { z } from "zod";
 import { clientIp } from "@/lib/client-ip";
 import { RATE_LIMITS, rateLimit, rateLimitResponseBody } from "@/lib/rate-limit";
@@ -14,9 +15,11 @@ export async function POST(
 ) {
   // Um voto por IP é a regra atual de participação (docs/orken-cond/arquitetura.md);
   // o IP precisa ser o real (cabeçalho confiável), nunca o que o cliente escreve.
-  const db = await tenantDb();
-  const ip = clientIp(request);
-  const limited = await rateLimit(RATE_LIMITS.pollVote, ip);
+  const { org, db } = await requireTenant();
+  const realIp = clientIp(request);
+  // Guardado como pseudônimo por organização (lib/privacy.ts); o IP em claro só vale aqui.
+  const ip = pseudonymizeIp(org.id, realIp);
+  const limited = await rateLimit(RATE_LIMITS.pollVote, realIp);
   if (!limited.allowed) {
     return NextResponse.json(rateLimitResponseBody(limited), { status: limited.reason === "limited" ? 429 : 503 });
   }
@@ -51,8 +54,9 @@ export async function POST(
         return NextResponse.json({ error: "Selecione apenas uma opção" }, { status: 400 });
       }
 
+      // Votos anteriores à pseudonimização guardam o IP em claro.
       const jaVotou = await db.votoEnquete.findFirst({
-        where: { enqueteId, ip },
+        where: { enqueteId, ip: { in: [ip, realIp] } },
       });
       if (jaVotou) {
         return NextResponse.json({ error: "Você já votou nesta enquete" }, { status: 409 });

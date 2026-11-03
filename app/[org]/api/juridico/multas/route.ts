@@ -6,6 +6,7 @@ import { z } from "zod";
 import { moneySchema } from "@/lib/money";
 import { registrarAuditoria } from "@/lib/juridico";
 import type { MultaStatus } from "@prisma/client";
+import { errorSummary } from "@/lib/privacy";
 
 const VALID_STATUS: MultaStatus[] = [
   "APLICADA", "NOTIFICADA", "CONTESTADA", "MANTIDA", "CANCELADA", "PAGA", "VENCIDA",
@@ -20,7 +21,7 @@ const CreateMultaSchema = z.object({
   valor: moneySchema({ positive: true }),
   dataAplicacao: z.string().min(1, "Data de aplicação obrigatória"),
   dataVencimento: z.string().optional().nullable(),
-  anexoUrl: z.string().url().optional().nullable(),
+  anexoUrl: z.string().url().max(500).refine((u) => u.startsWith("https://"), "Link precisa ser https").optional().nullable(),
   anexoNome: z.string().max(200).optional().nullable(),
 });
 
@@ -80,7 +81,7 @@ export async function POST(request: Request) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues[0].message }, { status: 400 });
     }
-    console.error("[POST /api/juridico/multas]", err);
+    console.error("[POST /api/juridico/multas]", errorSummary(err));
     return NextResponse.json({ error: "Erro ao criar multa." }, { status: 500 });
   }
 }
@@ -118,7 +119,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(multas);
   } catch (err) {
-    console.error("[GET /api/juridico/multas]", err);
+    console.error("[GET /api/juridico/multas]", errorSummary(err));
     return NextResponse.json({ error: "Erro ao buscar multas." }, { status: 500 });
   }
 }

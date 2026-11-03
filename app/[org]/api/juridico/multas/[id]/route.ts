@@ -4,6 +4,7 @@ import { tenantDb } from "@/lib/tenant";
 import { z } from "zod";
 import { moneySchema } from "@/lib/money";
 import { registrarAuditoria } from "@/lib/juridico";
+import { errorSummary } from "@/lib/privacy";
 
 const PatchMultaSchema = z.object({
   status: z.enum(["APLICADA", "NOTIFICADA", "CONTESTADA", "MANTIDA", "CANCELADA", "PAGA", "VENCIDA"]).optional(),
@@ -11,7 +12,7 @@ const PatchMultaSchema = z.object({
   dataVencimento: z.string().optional().nullable(),
   dataPagamento: z.string().optional().nullable(),
   descricaoInterna: z.string().max(2000).optional().nullable(),
-  anexoUrl: z.string().url().optional().nullable(),
+  anexoUrl: z.string().url().max(500).refine((u) => u.startsWith("https://"), "Link precisa ser https").optional().nullable(),
   anexoNome: z.string().max(200).optional().nullable(),
   ativo: z.boolean().optional(),
   observacao: z.string().max(500).optional(),
@@ -82,7 +83,7 @@ export async function PATCH(
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues[0].message }, { status: 400 });
     }
-    console.error("[PATCH /api/juridico/multas/[id]]", err);
+    console.error("[PATCH /api/juridico/multas/[id]]", errorSummary(err));
     return NextResponse.json({ error: "Erro ao atualizar multa." }, { status: 500 });
   }
 }
@@ -111,7 +112,7 @@ export async function GET(
 
     return NextResponse.json(multa);
   } catch (err) {
-    console.error("[GET /api/juridico/multas/[id]]", err);
+    console.error("[GET /api/juridico/multas/[id]]", errorSummary(err));
     return NextResponse.json({ error: "Erro ao buscar multa." }, { status: 500 });
   }
 }

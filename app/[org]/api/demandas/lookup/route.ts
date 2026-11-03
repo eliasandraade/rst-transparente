@@ -1,5 +1,7 @@
 import { NextResponse } from "next/server";
-import { tenantDb } from "@/lib/tenant";
+import { requireTenant } from "@/lib/tenant";
+import { attachmentLink } from "@/lib/files";
+import { errorSummary } from "@/lib/privacy";
 import { z } from "zod";
 import { verifyAccessCode, DUMMY_ACCESS_CODE_HASH } from "@/lib/demandas";
 import { clientIp } from "@/lib/client-ip";
@@ -13,7 +15,7 @@ const LookupSchema = z.object({
 const INVALID_MSG = "Protocolo ou código inválido. Verifique os dados e tente novamente.";
 
 export async function POST(request: Request) {
-  const db = await tenantDb();
+  const { org, db } = await requireTenant();
   const limited = await rateLimit(RATE_LIMITS.demandLookup, clientIp(request));
   if (!limited.allowed) {
     return NextResponse.json(rateLimitResponseBody(limited), { status: limited.reason === "limited" ? 429 : 503 });
@@ -51,7 +53,7 @@ export async function POST(request: Request) {
       category: demand.category,
       title: demand.title,
       description: demand.description,
-      attachmentUrl: demand.attachmentUrl,
+      attachmentUrl: attachmentLink(demand.attachmentUrl, org.id),
       attachmentName: demand.attachmentName,
       createdAt: demand.createdAt,
       closedAt: demand.closedAt,
@@ -61,7 +63,7 @@ export async function POST(request: Request) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: INVALID_MSG }, { status: 400 });
     }
-    console.error("[POST /api/demandas/lookup]", err);
+    console.error("[POST /api/demandas/lookup]", errorSummary(err));
     return NextResponse.json({ error: INVALID_MSG }, { status: 500 });
   }
 }

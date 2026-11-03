@@ -6,6 +6,7 @@ import { findActiveOrganization } from "@/lib/tenant";
 import { isOrganizationSlug } from "@/lib/tenant-path";
 import { ORKEN_TX_COOKIE } from "@/lib/session-cookies";
 import { redirectTo } from "@/lib/redirect";
+import { errorSummary } from "@/lib/privacy";
 
 /**
  * Entrada da equipe pelo Orken ID: `/entrar/{slug}` (o cartão do COND na Minha Orken
@@ -39,7 +40,7 @@ export async function GET(_request: Request, { params }: { params: Promise<{ slu
     });
     return response;
   } catch (error) {
-    console.error(`[orken] início do login: ${error instanceof Error ? error.message : "erro"}`);
+    console.error("[orken] início do login", errorSummary(error));
     return back(`/${slug}/admin/login?orken=indisponivel`);
   }
 }

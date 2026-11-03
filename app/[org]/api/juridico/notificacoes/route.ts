@@ -5,6 +5,7 @@ import { parseUnitLayout, validarBloco, validarUnidade } from "@/lib/units";
 import { z } from "zod";
 import { registrarAuditoria } from "@/lib/juridico";
 import type { NotificacaoStatus } from "@prisma/client";
+import { errorSummary } from "@/lib/privacy";
 
 const VALID_STATUS: NotificacaoStatus[] = [
   "EMITIDA", "ENTREGUE", "RESPONDIDA", "CONTESTADA", "ARQUIVADA",
@@ -17,7 +18,7 @@ const CreateNotificacaoSchema = z.object({
   motivo: z.string().min(3, "Motivo muito curto").max(200),
   descricaoInterna: z.string().max(2000).optional().nullable(),
   dataEmissao: z.string().min(1, "Data de emissão obrigatória"),
-  anexoUrl: z.string().url().optional().nullable(),
+  anexoUrl: z.string().url().max(500).refine((u) => u.startsWith("https://"), "Link precisa ser https").optional().nullable(),
   anexoNome: z.string().max(200).optional().nullable(),
 });
 
@@ -70,7 +71,7 @@ export async function POST(request: Request) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues[0].message }, { status: 400 });
     }
-    console.error("[POST /api/juridico/notificacoes]", err);
+    console.error("[POST /api/juridico/notificacoes]", errorSummary(err));
     return NextResponse.json({ error: "Erro ao criar notificação." }, { status: 500 });
   }
 }
@@ -108,7 +109,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(notificacoes);
   } catch (err) {
-    console.error("[GET /api/juridico/notificacoes]", err);
+    console.error("[GET /api/juridico/notificacoes]", errorSummary(err));
     return NextResponse.json({ error: "Erro ao buscar notificações." }, { status: 500 });
   }
 }

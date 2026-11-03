@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { staffSession, can, forbidden } from "@/lib/staff";
 import { syncProcesso } from "@/lib/juridico";
+import { errorSummary } from "@/lib/privacy";
 
 export async function POST(
   _request: Request,
@@ -25,7 +26,7 @@ export async function POST(
 
     return NextResponse.json({ sucesso: true, numeroProcesso: resultado.numeroProcesso });
   } catch (err) {
-    console.error("[POST /api/juridico/processos/[id]/sync]", err);
+    console.error("[POST /api/juridico/processos/[id]/sync]", errorSummary(err));
     return NextResponse.json({ error: "Erro ao sincronizar processo." }, { status: 500 });
   }
 }

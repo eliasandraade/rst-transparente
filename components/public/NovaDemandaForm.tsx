@@ -31,7 +31,7 @@ export default function NovaDemandaForm({ onSuccess }: NovaDemandaFormProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [uploadingFile, setUploadingFile] = useState(false);
-  const [attachmentUrl, setAttachmentUrl] = useState<string | null>(null);
+  const [attachmentRef, setAttachmentRef] = useState<string | null>(null);
   const [attachmentName, setAttachmentName] = useState<string | null>(null);
   const [descCount, setDescCount] = useState(0);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -69,7 +69,7 @@ export default function NovaDemandaForm({ onSuccess }: NovaDemandaFormProps) {
         if (fileRef.current) fileRef.current.value = "";
         return;
       }
-      setAttachmentUrl(json.url);
+      setAttachmentRef(json.ref);
       setAttachmentName(file.name);
     } catch {
       setError("Erro de conexão ao enviar arquivo. Tente novamente.");
@@ -79,7 +79,7 @@ export default function NovaDemandaForm({ onSuccess }: NovaDemandaFormProps) {
   }
 
   function removeAttachment() {
-    setAttachmentUrl(null);
+    setAttachmentRef(null);
     setAttachmentName(null);
     if (fileRef.current) fileRef.current.value = "";
   }
@@ -104,7 +104,7 @@ export default function NovaDemandaForm({ onSuccess }: NovaDemandaFormProps) {
           category: fd.get("category"),
           title: fd.get("title"),
           description: fd.get("description"),
-          attachmentUrl,
+          attachmentRef,
           attachmentName,
         }),
       });

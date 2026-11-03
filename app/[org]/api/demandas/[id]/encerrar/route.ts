@@ -3,6 +3,7 @@ import { staffSession, can, forbidden } from "@/lib/staff";
 import { organizationTransaction, requireTenant } from "@/lib/tenant";
 import { z } from "zod";
 import { sanitizeText } from "@/lib/demandas";
+import { errorSummary } from "@/lib/privacy";
 
 interface Params {
   params: Promise<{ id: string }>;
@@ -71,7 +72,7 @@ export async function POST(request: Request, { params }: Params) {
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues[0].message }, { status: 400 });
     }
-    console.error("[POST /api/demandas/[id]/encerrar]", err);
+    console.error("[POST /api/demandas/[id]/encerrar]", errorSummary(err));
     return NextResponse.json({ error: "Erro ao encerrar demanda." }, { status: 500 });
   }
 }

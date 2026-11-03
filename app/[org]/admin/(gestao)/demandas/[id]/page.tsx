@@ -1,6 +1,7 @@
 export const dynamic = "force-dynamic";
 
-import { tenantDb } from "@/lib/tenant";
+import { requireTenant } from "@/lib/tenant";
+import { attachmentLink } from "@/lib/files";
 import { notFound } from "next/navigation";
 import Link from "@/lib/org-navigation";
 import { ArrowLeft, Lock, Paperclip } from "lucide-react";
@@ -45,7 +46,7 @@ const isEncerrada = (status: DemandStatus) =>
 
 export default async function AdminDemandaDetailPage({ params }: Props) {
   await requireStaff();
-  const db = await tenantDb();
+  const { org, db } = await requireTenant();
   const { id } = await params;
 
   const demand = await db.demand.findUnique({
@@ -135,9 +136,10 @@ export default async function AdminDemandaDetailPage({ params }: Props) {
       </div>
 
       {/* Anexo */}
-      {demand.attachmentUrl && (
+      {/* Anexo privado: link assinado de 10 minutos, gerado a cada abertura da página */}
+      {attachmentLink(demand.attachmentUrl, org.id) && (
         <a
-          href={demand.attachmentUrl}
+          href={attachmentLink(demand.attachmentUrl, org.id)!}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-3 bg-[var(--primary-subtle)] border border-border rounded-xl px-4 py-3 text-primary hover:bg-[var(--surface-raised)] transition-colors duration-150"
