@@ -65,9 +65,13 @@ custo, migrations e pools sem ganho proporcional.
 2. **Banco:** Row-Level Security forçado em cada tabela de domínio (`organizationId =
    current_setting('app.organization_id')`), com o app conectado por um papel sem `BYPASSRLS` e que não é dono das
    tabelas. A organização vai por transação (`set_config(..., true)`); sem ela, nenhuma linha aparece.
-3. **Integridade:** chaves estrangeiras compostas (`organizationId`, `id`) entre registros de domínio (lançamento →
-   categoria, movimentação → demanda, voto → enquete/opção, notificação/multa → processo): um registro nunca aponta
-   para outro de outra organização. Unicidades por organização (e-mail de conta, protocolo, número de processo, voto).
+3. **Integridade** (migration `20261105000000_contract`): `organizationId` obrigatório (CHECK) nas 21 tabelas e um
+   gatilho por referência entre registros de domínio (lançamento → categoria, movimentação → demanda e conta, voto →
+   enquete e opção, notificação e multa → processo e conta, auditoria → conta, sessão → conta): um registro nunca
+   aponta para outro de outra organização, nem escrevendo direto no banco. Unicidades por organização (e-mail de
+   conta, protocolo, número de processo, configuração, vínculo ao Orken ID).
+4. **Papel de runtime:** o app conecta como `cond_app` (`scripts/db-runtime-role.sql`); migrations, com o dono
+   (`MIGRATION_DATABASE_URL`). Sem o papel, o RLS não vale para o app: o superusuário passa por cima.
 
 ## 3. Modelo de organização
 

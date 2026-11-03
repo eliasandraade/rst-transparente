@@ -85,6 +85,8 @@ jobs:
           test "$(q "select valor from lancamentos where id = 'legacy-l1'")" = "1234.56"
           test "$(q "select protocol from demands where id = 'legacy-d1'")" = "RST-2026-K7M9Q2"
           test "$(q "select count(*) from pg_class where relrowsecurity and relforcerowsecurity and relnamespace = 'public'::regnamespace")" = "21"
+          test "$(q "select count(*) from pg_constraint where conname like '%_organization_required'")" = "21"
+          test "$(q "select count(*) from pg_trigger where tgname like '%_same_organization'")" = "12"
       - name: Banco novo nasce sem organização
         run: test "$(psql -h localhost -U cond -d cond_test -Atc "select count(*) from organizations")" = "0"
       - name: Banco com divergência é recusado sem nada marcado
@@ -100,6 +102,11 @@ jobs:
         run: npm run test:integration
       - name: Papel de runtime sem BYPASSRLS
         run: psql -v ON_ERROR_STOP=1 -h localhost -U cond -d cond_test -f scripts/db-runtime-role.sql
+      - name: Migrations com o dono enquanto o app usa o papel de runtime
+        env:
+          DATABASE_URL: postgresql://cond_app@localhost:5432/cond_test
+          MIGRATION_DATABASE_URL: postgresql://cond@localhost:5432/cond_test
+        run: node scripts/db-migrate.mjs
       - name: Integração com RLS valendo (rotas pelo papel cond_app)
         env:
           DATABASE_URL: postgresql://cond_app@localhost:5432/cond_test
