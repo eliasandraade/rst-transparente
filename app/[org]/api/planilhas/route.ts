@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { staffSession, can, forbidden } from "@/lib/staff";
+import { RATE_LIMITS, rateLimit, rateLimitResponseBody } from "@/lib/rate-limit";
 import { requireTenant, tenantDb } from "@/lib/tenant";
 import { uploadPublicPdf } from "@/lib/files";
 import { errorSummary } from "@/lib/privacy";
@@ -29,6 +30,11 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
   if (!can(session, "planilhas.editar")) return forbidden();
+  // Envio de arquivo pela equipe: limite por conta, compartilhado entre réplicas.
+  const limited = await rateLimit(RATE_LIMITS.adminUpload, `staff:${session.user.id}`);
+  if (!limited.allowed) {
+    return NextResponse.json(rateLimitResponseBody(limited), { status: limited.reason === "limited" ? 429 : 503 });
+  }
 
   try {
     const formData = await request.formData();
