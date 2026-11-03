@@ -57,16 +57,3 @@ export interface SessionUser {
   role: Role;
 }
 
-declare module "next-auth" {
-  interface Session {
-    user: {
-      id: string;
-      email: string;
-      name: string;
-      role: string;
-      /** Organização em que a sessão foi aberta (só vale nela; lib/staff.ts). */
-      organizationId: string;
-      organizationSlug: string;
-    };
-  }
-}

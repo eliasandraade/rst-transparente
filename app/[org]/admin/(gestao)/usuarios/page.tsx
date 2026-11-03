@@ -26,7 +26,7 @@ export default async function UsuariosPage() {
 
   const usuarios = await db.user.findMany({
     where: { role: { not: "MASTER" } },
-    select: { id: true, name: true, email: true, role: true, ativo: true, createdAt: true },
+    select: { id: true, name: true, email: true, role: true, ativo: true, createdAt: true, orkenLinkedAt: true },
     orderBy: [{ ativo: "desc" }, { createdAt: "desc" }],
   });
 

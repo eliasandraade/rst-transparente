@@ -54,7 +54,6 @@ jobs:
       SHADOW_DATABASE_URL: postgresql://cond@localhost:5432/cond_shadow
       REDIS_URL: redis://localhost:6379
       CLIENT_IP_HEADER: x-real-ip
-      NEXTAUTH_URL: http://localhost:3000
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -63,8 +62,6 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx prisma generate
-      - name: Segredo de sessão só desta execução
-        run: echo "NEXTAUTH_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
       - name: Banco de sombra para conferir schema × migrations
         run: psql -h localhost -U cond -d cond_test -c "CREATE DATABASE cond_shadow"
       - name: schema.prisma e migrations em sincronia
@@ -87,7 +84,7 @@ jobs:
           done
           test "$(q "select valor from lancamentos where id = 'legacy-l1'")" = "1234.56"
           test "$(q "select protocol from demands where id = 'legacy-d1'")" = "RST-2026-K7M9Q2"
-          test "$(q "select count(*) from pg_class where relrowsecurity and relforcerowsecurity and relnamespace = 'public'::regnamespace")" = "19"
+          test "$(q "select count(*) from pg_class where relrowsecurity and relforcerowsecurity and relnamespace = 'public'::regnamespace")" = "21"
       - name: Banco novo nasce sem organização
         run: test "$(psql -h localhost -U cond -d cond_test -Atc "select count(*) from organizations")" = "0"
       - name: Banco com divergência é recusado sem nada marcado
@@ -131,4 +128,24 @@ jobs:
           check /financeiro 308 -H "Host: legado.test"
           case "$(location /demandas/acompanhar/SMK-2026-AAAAAA -H "Host: legado.test")" in */condominio-smoke/demandas/acompanhar/SMK-2026-AAAAAA) ;; *) echo "redirecionamento legado errado"; exit 1;; esac
           check /financeiro 404
+          # Orken ID não configurado: a entrada volta ao login do condomínio
+          case "$(location /entrar/condominio-smoke)" in */condominio-smoke/admin/login\?orken=desligado) ;; *) echo "entrada sem Orken ID errada"; exit 1;; esac
+          # Escrita de outra origem
+          check /condominio-smoke/api/demandas 403 -X POST -H "Origin: https://outro.test" -H "content-type: application/json" -d "{}"
+          # Login local com conta sintética desta execução: sessão no servidor, cookie __Host- HttpOnly
+          SMOKE_PASSWORD=$(openssl rand -hex 16)
+          HASH=$(node -e "console.log(require('bcryptjs').hashSync(process.argv[1], 10))" "$SMOKE_PASSWORD")
+          psql -h localhost -U cond -d cond_test -c "INSERT INTO users (id, \"organizationId\", email, name, password, role, \"updatedAt\") SELECT 'smoke-user', id, 'smoke@condominio-smoke.test', 'Smoke', '$HASH', 'GESTAO', now() FROM organizations WHERE slug = 'condominio-smoke'"
+          curl -s -D /tmp/login.headers -o /dev/null -X POST -H "Origin: http://localhost:3100" -H "content-type: application/json" \
+            -d "{\"email\":\"smoke@condominio-smoke.test\",\"password\":\"$SMOKE_PASSWORD\"}" http://localhost:3100/condominio-smoke/api/auth/login
+          grep -q "^HTTP/1.1 200" /tmp/login.headers
+          grep -i "set-cookie: __Host-cond_session=" /tmp/login.headers | grep -qi "httponly"
+          SESSION=$(grep -io "__Host-cond_session=[^;]*" /tmp/login.headers | head -1)
+          check /condominio-smoke/admin/dashboard 200 -H "Cookie: $SESSION; $(grep -io "__Host-cond_csrf=[^;]*" /tmp/login.headers | head -1)"
+          # Logout: sessão revogada e cookies expirados com os mesmos atributos (__Host- exige Secure)
+          CSRF=$(grep -io "__Host-cond_csrf=[^;]*" /tmp/login.headers | head -1)
+          curl -s -D /tmp/logout.headers -o /dev/null -X POST -H "Origin: http://localhost:3100" -H "x-cond-csrf: ${CSRF#*=}" -H "Cookie: $SESSION; $CSRF" http://localhost:3100/condominio-smoke/api/auth/logout
+          grep -i "set-cookie: __Host-cond_session=;" /tmp/logout.headers | grep -i "max-age=0" | grep -qi "secure"
+          check /condominio-smoke/admin/dashboard 307 -H "Cookie: $SESSION; $CSRF"
+          check /condominio-smoke/api/auth/login 401 -X POST -H "Origin: http://localhost:3100" -H "content-type: application/json" -d '{"email":"smoke@condominio-smoke.test","password":"errada"}'
           if grep -E "TypeError|Error:" /tmp/next.log; then echo "erro no log do servidor"; exit 1; fi

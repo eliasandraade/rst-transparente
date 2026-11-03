@@ -1,31 +1,66 @@
 import { cache } from "react";
 import { NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
 import { getTenant } from "@/lib/tenant";
 import { hasPermission, type Permission } from "@/lib/permissions";
 import { orgRedirect } from "@/lib/org-server";
+import { csrfMatches, readSession, revokeSession } from "@/lib/session";
+import { audit } from "@/lib/audit";
+import { orkenConfig } from "@/lib/orken/config";
+import { accessVersion, checkAccess } from "@/lib/orken/access";
+import { PlatformUnavailableError } from "@/lib/orken/platform";
 
 /**
- * Pessoa da equipe autenticada NA organização do caminho, com papel e status lidos
- * do banco agora (nunca do token: conta desativada ou papel trocado valem na hora).
- * Sessão de outra organização não vale aqui. Mesmo formato de antes
- * (`session.user.role`) para as rotas não mudarem de forma.
+ * Pessoa da equipe com sessão válida NA organização do caminho, com papel e status
+ * lidos do banco agora (conta desativada ou papel trocado valem na hora). Sessão
+ * aberta pelo Orken ID ainda passa pela Platform a cada requisição (com cache curto
+ * por versão de acesso): negada, a sessão é revogada; Platform fora do ar, erro
+ * (PlatformUnavailableError), nunca um sim implícito nem logout por pane.
+ * docs/orken-cond/identidade.md.
  */
 export interface StaffSession {
-  user: { id: string; name: string; email: string; role: string; organizationId: string };
+  user: { id: string; name: string; email: string; role: string; organizationId: string; orkenLinked: boolean };
+  session: { id: string; authMethod: "PASSWORD" | "ORKEN_ID"; idToken: string | null };
 }
 
 export const staffSession = cache(async (): Promise<StaffSession | null> => {
-  const [session, tenant] = await Promise.all([auth(), getTenant()]);
-  const userId = session?.user?.id;
-  if (!userId || !tenant) return null;
-  if (session.user.organizationId !== tenant.org.id) return null;
-  const user = await tenant.db.user.findUnique({
-    where: { id: userId },
-    select: { id: true, name: true, email: true, role: true, ativo: true },
+  const tenant = await getTenant();
+  if (!tenant) return null;
+  const { org, db } = tenant;
+  const active = await readSession(db);
+  if (!active || !(await csrfMatches(active))) return null;
+
+  const user = await db.user.findUnique({
+    where: { id: active.userId },
+    select: { id: true, name: true, email: true, role: true, ativo: true, orkenSubject: true },
   });
-  if (!user?.ativo) return null;
-  return { user: { id: user.id, name: user.name, email: user.email, role: user.role, organizationId: tenant.org.id } };
+  if (!user?.ativo) {
+    await revokeSession(db, active.id, "account_inactive");
+    return null;
+  }
+  // Depois do vínculo, a identidade é o Orken ID: sessão aberta com a senha local não vale mais.
+  if (active.authMethod === "PASSWORD" && user.orkenSubject) {
+    await revokeSession(db, active.id, "orken_linked");
+    return null;
+  }
+  if (active.authMethod === "ORKEN_ID") {
+    if (!user.orkenSubject) {
+      await revokeSession(db, active.id, "orken_unlinked");
+      return null;
+    }
+    const config = orkenConfig();
+    if (!config || !org.platformOrganizationId) throw new PlatformUnavailableError("Orken ID não configurado para esta organização");
+    const access = await checkAccess(config, org.platformOrganizationId, user.orkenSubject, await accessVersion());
+    if (!access.allowed) {
+      await revokeSession(db, active.id, "platform_access_denied");
+      await audit(db, "PLATFORM_ACCESS_DENIED", { userId: user.id, subject: user.orkenSubject, detail: { reason: access.reason } });
+      return null;
+    }
+  }
+
+  return {
+    user: { id: user.id, name: user.name, email: user.email, role: user.role, organizationId: org.id, orkenLinked: !!user.orkenSubject },
+    session: { id: active.id, authMethod: active.authMethod, idToken: active.idToken },
+  };
 });
 
 /**

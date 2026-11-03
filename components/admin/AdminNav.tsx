@@ -1,8 +1,8 @@
 "use client";
 
 import Link from "@/lib/org-navigation";
-import { useOrgPathname as usePathname, prefixOrgPath, useOrgSlug } from "@/lib/org-navigation";
-import { signOut } from "next-auth/react";
+import { useOrgPathname as usePathname, useOrgSlug } from "@/lib/org-navigation";
+import { signOutStaff } from "@/lib/sign-out";
 import { cn } from "@/lib/utils";
 import {
   LayoutDashboard,
@@ -149,7 +149,7 @@ export default function AdminNav({ userRole }: AdminNavProps) {
           Portal público
         </Link>
         <button
-          onClick={() => signOut({ callbackUrl: prefixOrgPath(orgSlug, "/admin/login") })}
+          onClick={() => signOutStaff(orgSlug)}
           className="flex items-center gap-2.5 w-full px-3 py-2 rounded-md text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--danger)] hover:bg-[var(--danger-subtle)] transition-colors duration-150"
           style={{ minHeight: "auto" }}
           aria-label="Sair da área administrativa"

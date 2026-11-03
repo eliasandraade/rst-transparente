@@ -21,6 +21,10 @@ export async function PATCH(request: Request) {
   if (!session) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
   }
+  // Conta vinculada: a senha e o segundo fator são os da conta Orken.
+  if (session.user.orkenLinked) {
+    return NextResponse.json({ error: "Sua senha é a da conta Orken.", code: "ORKEN_MANAGED" }, { status: 409 });
+  }
 
   try {
     const body = await request.json();
@@ -52,6 +56,11 @@ export async function PATCH(request: Request) {
     await db.user.update({
       where: { id: session.user.id },
       data: { password: hash },
+    });
+    // As outras sessões abertas com a senha antiga terminam; esta continua.
+    await db.staffSession.updateMany({
+      where: { userId: session.user.id, revokedAt: null, id: { not: session.session.id } },
+      data: { revokedAt: new Date(), revokedReason: "password_changed" },
     });
 
     return NextResponse.json({ ok: true });

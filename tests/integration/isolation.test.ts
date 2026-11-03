@@ -1,18 +1,11 @@
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { hashAccessCode } from "@/lib/demandas";
 import {
-  RUN, as, createOrganization, dropOrganizations, flushRateLimits, jsonRequest, params, prisma,
+  RUN, as, createOrganization, dropOrganizations, flushRateLimits, jsonRequest, newSession, params, prisma,
   type TestOrganization,
 } from "./context";
 
-vi.mock("next/headers", async () => {
-  const { ctx } = await import("./context");
-  return { headers: async () => new Headers(ctx.org ? { "x-cond-organization": ctx.org } : {}) };
-});
-vi.mock("@/lib/auth", async () => {
-  const { ctx } = await import("./context");
-  return { auth: async () => ctx.session };
-});
+vi.mock("next/headers", async () => (await import("./context")).mockHeaders());
 
 /**
  * Dois condomínios sintéticos (só em banco de teste): nada de um aparece, muda ou
@@ -131,7 +124,13 @@ describe("equipe", () => {
     expect((await GET()).status).toBe(200);
     await prisma.user.update({ where: { id: B.staff.id }, data: { ativo: false } });
     expect((await GET()).status).toBe(401);
+    // A sessão foi revogada; reativar a conta não a ressuscita.
     await prisma.user.update({ where: { id: B.staff.id }, data: { ativo: true } });
+    expect((await GET()).status).toBe(401);
+    expect((await prisma.staffSession.findMany({ where: { userId: B.staff.id } })).map((s) => s.revokedReason)).toContain("account_inactive");
+    await newSession(B);
+    as(B, B);
+    expect((await GET()).status).toBe(200);
   });
 
   it("sessão aberta em A não vale em B", async () => {

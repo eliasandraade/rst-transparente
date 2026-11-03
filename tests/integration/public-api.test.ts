@@ -5,14 +5,7 @@ import {
   type TestOrganization,
 } from "./context";
 
-vi.mock("next/headers", async () => {
-  const { ctx } = await import("./context");
-  return { headers: async () => new Headers(ctx.org ? { "x-cond-organization": ctx.org } : {}) };
-});
-vi.mock("@/lib/auth", async () => {
-  const { ctx } = await import("./context");
-  return { auth: async () => ctx.session };
-});
+vi.mock("next/headers", async () => (await import("./context")).mockHeaders());
 
 /**
  * Rotas reais contra PostgreSQL e Redis reais: consulta de demanda sem oráculo de
