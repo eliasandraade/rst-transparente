@@ -47,13 +47,12 @@ export default auth((req) => {
   // Sessão só vale no condomínio em que foi aberta; papel e status são conferidos no servidor.
   const signedInHere = req.auth?.user?.organizationSlug === slug;
 
+  // Só o atalho para quem não tem sessão aqui: a conta é conferida no banco pelas páginas
+  // (requireStaff), e o login manda ao painel só quem o banco aceitar (login/layout.tsx).
   if (isAdminRoute && !isLoginPage && !signedInHere) {
     const loginUrl = new URL(`/${slug}/admin/login`, req.url);
     loginUrl.searchParams.set("callbackUrl", rest);
     return NextResponse.redirect(loginUrl);
-  }
-  if (isLoginPage && signedInHere) {
-    return NextResponse.redirect(new URL(`/${slug}/admin/dashboard`, req.url));
   }
   return NextResponse.next({ request: { headers } });
 });

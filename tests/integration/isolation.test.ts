@@ -125,6 +125,15 @@ describe("leituras públicas", () => {
 });
 
 describe("equipe", () => {
+  it("conta desativada perde o acesso na hora, com o token ainda válido", async () => {
+    const { GET } = await import("@/app/[org]/api/propostas/route");
+    as(B, B);
+    expect((await GET()).status).toBe(200);
+    await prisma.user.update({ where: { id: B.staff.id }, data: { ativo: false } });
+    expect((await GET()).status).toBe(401);
+    await prisma.user.update({ where: { id: B.staff.id }, data: { ativo: true } });
+  });
+
   it("sessão aberta em A não vale em B", async () => {
     const { GET } = await import("@/app/[org]/api/propostas/route");
     as(B, A);

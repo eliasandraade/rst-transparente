@@ -7,12 +7,13 @@ import Link from "@/lib/org-navigation";
 import { Loader2 } from "lucide-react";
 
 export default function DemandaDetalhePublicoPage() {
-  const { protocol } = useParams<{ protocol: string }>();
+  const { org, protocol } = useParams<{ org: string; protocol: string }>();
   const [data, setData] = useState<DemandaPublicData | null>(null);
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    const key = `demand-${decodeURIComponent(protocol)}`;
+    // Chave por condomínio: a consulta feita em um nunca aparece no endereço de outro.
+    const key = `demand-${org}-${decodeURIComponent(protocol)}`;
     const stored = sessionStorage.getItem(key);
     if (stored) {
       try {
@@ -23,7 +24,7 @@ export default function DemandaDetalhePublicoPage() {
     } else {
       setNotFound(true);
     }
-  }, [protocol]);
+  }, [org, protocol]);
 
   if (notFound) {
     return (

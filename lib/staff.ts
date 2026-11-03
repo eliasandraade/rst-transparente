@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { getTenant } from "@/lib/tenant";
 import { hasPermission, type Permission } from "@/lib/permissions";
+import { orgRedirect } from "@/lib/org-server";
 
 /**
  * Pessoa da equipe autenticada NA organização do caminho, com papel e status lidos
@@ -26,6 +27,17 @@ export const staffSession = cache(async (): Promise<StaffSession | null> => {
   if (!user?.ativo) return null;
   return { user: { id: user.id, name: user.name, email: user.email, role: user.role, organizationId: tenant.org.id } };
 });
+
+/**
+ * Páginas da gestão: sem sessão válida neste condomínio, vai para o login dele. Cada
+ * página chama, além do layout: layout e página renderizam em paralelo, e o dado
+ * só sai depois da checagem feita no próprio componente que o busca.
+ */
+export async function requireStaff(): Promise<StaffSession> {
+  const session = await staffSession();
+  if (!session) return orgRedirect("/admin/login");
+  return session;
+}
 
 export function can(session: StaffSession | null, permission: Permission): boolean {
   return !!session && hasPermission(session.user.role, permission);

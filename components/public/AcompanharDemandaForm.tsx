@@ -47,7 +47,7 @@ export default function AcompanharDemandaForm({
       }
 
       const data = await res.json();
-      sessionStorage.setItem(`demand-${protocol.trim().toUpperCase()}`, JSON.stringify(data));
+      sessionStorage.setItem(`demand-${organization.slug}-${protocol.trim().toUpperCase()}`, JSON.stringify(data));
       router.push(`/demandas/acompanhar/${encodeURIComponent(protocol.trim().toUpperCase())}`);
     } catch {
       setError("Erro de conexão. Verifique sua internet e tente novamente.");
