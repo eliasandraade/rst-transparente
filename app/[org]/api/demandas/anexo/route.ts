@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
-import { uploadAnexoDemanda } from "@/lib/cloudinary";
+import { uploadPrivateAttachment } from "@/lib/files";
+import { requireTenant } from "@/lib/tenant";
+import { errorSummary } from "@/lib/privacy";
 import { clientIp } from "@/lib/client-ip";
 import { RATE_LIMITS, rateLimit, rateLimitResponseBody } from "@/lib/rate-limit";
 
-// Upload público de anexo da demanda (morador não tem login).
-// Separado de /api/upload, que continua restrito ao admin (pareceres).
+// Upload público de anexo da demanda (morador não tem login). O arquivo fica privado
+// (lib/files.ts): a resposta traz só a referência, que a criação da demanda confere.
+// Separado de /api/upload, que continua restrito à gestão (pareceres).
 
 const MAX_SIZE_MB = 10;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
@@ -20,6 +23,7 @@ function detectarTipo(buf: Buffer): "jpg" | "png" | "webp" | "pdf" | null {
 }
 
 export async function POST(request: Request) {
+  const { org } = await requireTenant();
   const limited = await rateLimit(RATE_LIMITS.demandAttachment, clientIp(request));
   if (!limited.allowed) {
     return NextResponse.json(rateLimitResponseBody(limited), { status: limited.reason === "limited" ? 429 : 503 });
@@ -49,10 +53,10 @@ export async function POST(request: Request) {
       );
     }
 
-    const { url } = await uploadAnexoDemanda(buffer, arquivo.name, tipo === "pdf");
-    return NextResponse.json({ url, nome: arquivo.name }, { status: 201 });
+    const ref = await uploadPrivateAttachment(org.id, buffer, arquivo.name, tipo === "pdf" ? "pdf" : "image");
+    return NextResponse.json({ ref, nome: arquivo.name }, { status: 201 });
   } catch (err) {
-    console.error("[POST /api/demandas/anexo]", err);
+    console.error("[POST /api/demandas/anexo]", errorSummary(err));
     return NextResponse.json(
       { error: "Erro ao enviar arquivo. Tente novamente." },
       { status: 500 }

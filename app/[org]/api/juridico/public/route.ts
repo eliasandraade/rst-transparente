@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { tenantDb } from "@/lib/tenant";
 import { mascarNumeroProcesso } from "@/lib/juridico";
 import { sumMoney, moneyToNumber } from "@/lib/money";
+import { errorSummary } from "@/lib/privacy";
 
 export async function GET() {
   const db = await tenantDb();
@@ -64,7 +65,7 @@ export async function GET() {
       processos: processosMascarados,
     });
   } catch (err) {
-    console.error("[GET /api/juridico/public]", err);
+    console.error("[GET /api/juridico/public]", errorSummary(err));
     return NextResponse.json({ error: "Erro ao buscar dados jurídicos." }, { status: 500 });
   }
 }

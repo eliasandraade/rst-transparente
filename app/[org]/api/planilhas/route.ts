@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { staffSession, can, forbidden } from "@/lib/staff";
-import { tenantDb } from "@/lib/tenant";
-import { uploadParecer } from "@/lib/cloudinary";
+import { requireTenant, tenantDb } from "@/lib/tenant";
+import { uploadPublicPdf } from "@/lib/files";
+import { errorSummary } from "@/lib/privacy";
 
 export const runtime = "nodejs";
 
@@ -22,7 +23,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const db = await tenantDb();
+  const { org, db } = await requireTenant();
   const session = await staffSession();
   if (!session) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
@@ -52,7 +53,8 @@ export async function POST(request: Request) {
     }
 
     const buffer = Buffer.from(await arquivo.arrayBuffer());
-    const { url } = await uploadParecer(buffer, arquivo.name);
+    const extensao = nomeArquivo.endsWith(".xlsx") ? "xlsx" : "xls";
+    const { url } = await uploadPublicPdf(org.id, "planilhas", buffer, arquivo.name, extensao);
 
     const planilha = await db.planilhaDownload.create({
       data: {
@@ -64,7 +66,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(planilha, { status: 201 });
   } catch (err) {
-    console.error("Erro no upload de planilha:", err);
+    console.error("Erro no upload de planilha:", errorSummary(err));
     return NextResponse.json({ error: "Erro ao fazer upload da planilha" }, { status: 500 });
   }
 }

@@ -5,6 +5,7 @@ import { takeTransaction } from "@/lib/orken/transaction";
 import { completeOrkenLogin } from "@/lib/orken/login";
 import { ORKEN_TX_COOKIE } from "@/lib/session-cookies";
 import { redirectTo } from "@/lib/redirect";
+import { errorSummary } from "@/lib/privacy";
 
 /**
  * Retorno do Orken ID (`orken-cond-web`). O state precisa ser o do cookie deste
@@ -41,7 +42,7 @@ export async function GET(request: Request) {
     if (outcome.ok) return go(`/${outcome.slug}/admin/dashboard`);
     return go(outcome.slug ? `/${outcome.slug}/admin/login?orken=${outcome.reason}` : "/");
   } catch (error) {
-    console.error(`[orken] callback: ${error instanceof Error ? error.message : "erro"}`);
+    console.error("[orken] callback", errorSummary(error));
     return go(`/${tx.slug}/admin/login?orken=erro`);
   }
 }

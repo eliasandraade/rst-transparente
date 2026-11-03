@@ -143,9 +143,11 @@ O nome vem de `config_portal.nomeCondominio`; nada inventado.
 
 ## 6. Arquivos
 
-Cloudinary com pasta por organização (`orken-cond/{organizationId}/{módulo}`). Públicos (parecer publicado, planilha,
-foto de obra e de membro) em entrega pública; anexos de demanda e do jurídico em entrega `authenticated`, servidos
-só por rota autorizada com URL assinada curta. Nenhum objeto antigo removido.
+Cloudinary com pasta por organização (`orken-cond/{organizationId}/{módulo}`, `lib/files.ts`). Públicos (parecer,
+planilha) em entrega pública. Anexo de demanda em entrega `authenticated`: o banco guarda só a referência
+(`cond-file:`), conferida contra a organização na criação, e quem pode ver (equipe; morador com protocolo e código)
+recebe link assinado de 10 minutos. Links do jurídico só `https`. Fotos de membros seguem como URLs externas
+informadas pela gestão. Nenhum objeto antigo removido ou movido. Dados pessoais: `docs/orken-cond/lgpd.md`.
 
 ## 7. Entrega
 

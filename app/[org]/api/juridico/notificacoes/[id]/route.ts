@@ -3,13 +3,14 @@ import { staffSession, can, forbidden } from "@/lib/staff";
 import { tenantDb } from "@/lib/tenant";
 import { z } from "zod";
 import { registrarAuditoria } from "@/lib/juridico";
+import { errorSummary } from "@/lib/privacy";
 
 const PatchNotificacaoSchema = z.object({
   status: z.enum(["EMITIDA", "ENTREGUE", "RESPONDIDA", "CONTESTADA", "ARQUIVADA"]).optional(),
   dataEntrega: z.string().optional().nullable(),
   dataResposta: z.string().optional().nullable(),
   descricaoInterna: z.string().max(2000).optional().nullable(),
-  anexoUrl: z.string().url().optional().nullable(),
+  anexoUrl: z.string().url().max(500).refine((u) => u.startsWith("https://"), "Link precisa ser https").optional().nullable(),
   anexoNome: z.string().max(200).optional().nullable(),
   ativo: z.boolean().optional(),
   observacao: z.string().max(500).optional(),
@@ -69,7 +70,7 @@ export async function PATCH(
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues[0].message }, { status: 400 });
     }
-    console.error("[PATCH /api/juridico/notificacoes/[id]]", err);
+    console.error("[PATCH /api/juridico/notificacoes/[id]]", errorSummary(err));
     return NextResponse.json({ error: "Erro ao atualizar notificação." }, { status: 500 });
   }
 }
@@ -98,7 +99,7 @@ export async function GET(
 
     return NextResponse.json(notificacao);
   } catch (err) {
-    console.error("[GET /api/juridico/notificacoes/[id]]", err);
+    console.error("[GET /api/juridico/notificacoes/[id]]", errorSummary(err));
     return NextResponse.json({ error: "Erro ao buscar notificação." }, { status: 500 });
   }
 }

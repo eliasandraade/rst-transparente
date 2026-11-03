@@ -49,7 +49,7 @@ if (!tenantRes.ok) {
   process.exit(1);
 }
 const tenant = await tenantRes.json();
-console.log(`Platform: ${tenant.slug} ${tenant.organizationId} (organização ${tenant.status}, COND ${tenant.productStatus})`);
+console.log(`Platform: ${tenant.slug} ${tenant.organizationId} (${tenant.displayName}, COND ${tenant.productStatus})`);
 
 const prisma = new PrismaClient();
 try {

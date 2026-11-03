@@ -1,11 +1,14 @@
 import { NextResponse } from "next/server";
 import { staffSession, can, forbidden } from "@/lib/staff";
-import { uploadParecer } from "@/lib/cloudinary";
+import { uploadPublicPdf } from "@/lib/files";
+import { requireTenant } from "@/lib/tenant";
+import { errorSummary } from "@/lib/privacy";
 
 const MAX_SIZE_MB = 10;
 const MAX_SIZE_BYTES = MAX_SIZE_MB * 1024 * 1024;
 
 export async function POST(request: Request) {
+  const { org } = await requireTenant();
   const session = await staffSession();
   if (!session) {
     return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
@@ -35,11 +38,11 @@ export async function POST(request: Request) {
     }
 
     const buffer = Buffer.from(await arquivo.arrayBuffer());
-    const { url, publicId } = await uploadParecer(buffer, arquivo.name);
+    const { url, publicId } = await uploadPublicPdf(org.id, "pareceres", buffer, arquivo.name);
 
     return NextResponse.json({ url, publicId, nome: arquivo.name });
   } catch (err) {
-    console.error("Erro no upload:", err);
+    console.error("[POST /api/upload]", errorSummary(err));
     return NextResponse.json({ error: "Erro ao fazer upload do arquivo" }, { status: 500 });
   }
 }

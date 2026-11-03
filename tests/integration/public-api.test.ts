@@ -6,6 +6,8 @@ import {
 } from "./context";
 
 vi.mock("next/headers", async () => (await import("./context")).mockHeaders());
+// lib/files assina links localmente; sem rede, só uma configuração de teste.
+Object.assign(process.env, { CLOUDINARY_CLOUD_NAME: "nuvem-teste", CLOUDINARY_API_KEY: "123", CLOUDINARY_API_SECRET: "segredo-teste" });
 
 /**
  * Rotas reais contra PostgreSQL e Redis reais: consulta de demanda sem oráculo de
@@ -141,6 +143,51 @@ describe("enquete", () => {
     const ip = "192.0.2.77";
     expect((await POST(jsonRequest(`/api/enquetes/${a.id}/votar`, { opcaoIds: [a.opcoes[0]!.id] }, "POST", ip), params({ id: a.id }))).status).toBe(200);
     expect((await POST(jsonRequest(`/api/enquetes/${a.id}/votar`, { opcaoIds: [a.opcoes[1]!.id] }, "POST", ip), params({ id: a.id }))).status).toBe(409);
-    expect((await prisma.votoEnquete.findFirstOrThrow({ where: { enqueteId: a.id } })).organizationId).toBe(org.id);
+    const voto = await prisma.votoEnquete.findFirstOrThrow({ where: { enqueteId: a.id } });
+    expect(voto.organizationId).toBe(org.id);
+    // IP guardado como pseudônimo da organização, nunca em claro.
+    expect(voto.ip.startsWith("h1:")).toBe(true);
+    expect(voto.ip).not.toContain(ip);
+  });
+
+  it("voto antigo com IP em claro ainda impede repetir", async () => {
+    const { POST } = await import("@/app/[org]/api/enquetes/[id]/votar/route");
+    as(org);
+    const e = await prisma.enquete.create({
+      data: { organizationId: org.id, pergunta: `Antiga ${RUN}`, status: "PUBLICADO", opcoes: { create: [{ organizationId: org.id, texto: "Sim" }] } },
+      include: { opcoes: true },
+    });
+    const ip = "192.0.2.91";
+    await prisma.votoEnquete.create({ data: { organizationId: org.id, enqueteId: e.id, opcaoId: e.opcoes[0]!.id, ip } });
+    expect((await POST(jsonRequest(`/api/enquetes/${e.id}/votar`, { opcaoIds: [e.opcoes[0]!.id] }, "POST", ip), params({ id: e.id }))).status).toBe(409);
+  });
+});
+
+describe("anexo de demanda", () => {
+  const base = {
+    requesterName: "Pessoa Teste", unit: "C-303", phone: "85999990000", category: "VAZAMENTO",
+    title: "Vazamento na garagem", description: "Vazamento perto da vaga 12 desde ontem.",
+  };
+
+  it("referência de outra organização ou URL qualquer é recusada; a própria vira link assinado na consulta", async () => {
+    const { POST } = await import("@/app/[org]/api/demandas/route");
+    as(org);
+    const outra = `cond-file:image:jpg:orken-cond/${"0".repeat(8)}-0000-4000-8000-${"0".repeat(12)}/demandas/1-foto`;
+    expect((await POST(jsonRequest("/api/demandas", { ...base, attachmentRef: outra }))).status).toBe(400);
+    expect((await POST(jsonRequest("/api/demandas", { ...base, attachmentRef: "https://res.cloudinary.com/x/image/upload/a.jpg" }))).status).toBe(400);
+
+    const propria = `cond-file:image:jpg:orken-cond/${org.id}/demandas/1700000000000-foto`;
+    const res = await POST(jsonRequest("/api/demandas", { ...base, attachmentRef: propria, attachmentName: "foto.jpg" }));
+    expect(res.status).toBe(201);
+    const { protocol, accessCode } = (await res.json()) as { protocol: string; accessCode: string };
+    const salva = await prisma.demand.findFirstOrThrow({ where: { protocol } });
+    expect(salva.attachmentUrl).toBe(propria);
+    expect(salva.ipAddress?.startsWith("h1:")).toBe(true);
+
+    const lookup = await import("@/app/[org]/api/demandas/lookup/route");
+    const body = (await (await lookup.POST(jsonRequest("/api/demandas/lookup", { protocol, accessCode }))).json()) as { attachmentUrl: string };
+    const link = new URL(body.attachmentUrl);
+    expect(link.hostname).toBe("api.cloudinary.com");
+    expect(link.searchParams.get("type")).toBe("authenticated");
   });
 });

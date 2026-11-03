@@ -50,7 +50,8 @@ de produção de pé.
 | `DATABASE_URL` | PostgreSQL |
 | `REDIS_URL` | Rate limit e transações de login (obrigatório em produção: sem Redis, falha fechado) |
 | `CLIENT_IP_HEADER` | Cabeçalho com o IP real do cliente (`x-real-ip` no Railway) |
-| `CLOUDINARY_*` | Arquivos |
+| `CLOUDINARY_*` | Arquivos (públicos e privados por organização, `lib/files.ts`) |
+| `IP_HASH_SECRET` | Pseudônimo de IP por organização (obrigatória em produção; `docs/orken-cond/lgpd.md`) |
 | `DATAJUD_API_KEY` | Sincronização de processos (tribunal por organização) |
 | `LEGACY_HOST_ORGANIZATION` | Host antigo de um condomínio só → `308` para `/{slug}/...` |
 | `ORKEN_*`, `PLATFORM_API_URL`, `APP_BASE_URL` | Orken ID e Platform: todas ou nenhuma (`.env.example`) |

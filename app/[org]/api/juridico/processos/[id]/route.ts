@@ -3,6 +3,7 @@ import { staffSession, can, forbidden } from "@/lib/staff";
 import { tenantDb } from "@/lib/tenant";
 import { z } from "zod";
 import { registrarAuditoria } from "@/lib/juridico";
+import { errorSummary } from "@/lib/privacy";
 
 
 const PatchProcessoSchema = z.object({
@@ -80,7 +81,7 @@ export async function PATCH(
     if (err instanceof z.ZodError) {
       return NextResponse.json({ error: err.issues[0].message }, { status: 400 });
     }
-    console.error("[PATCH /api/juridico/processos/[id]]", err);
+    console.error("[PATCH /api/juridico/processos/[id]]", errorSummary(err));
     return NextResponse.json({ error: "Erro ao atualizar processo." }, { status: 500 });
   }
 }
@@ -117,7 +118,7 @@ export async function GET(
 
     return NextResponse.json(processo);
   } catch (err) {
-    console.error("[GET /api/juridico/processos/[id]]", err);
+    console.error("[GET /api/juridico/processos/[id]]", errorSummary(err));
     return NextResponse.json({ error: "Erro ao buscar processo." }, { status: 500 });
   }
 }

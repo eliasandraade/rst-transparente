@@ -1,7 +1,8 @@
 import { NextResponse } from "next/server";
 import { staffSession, can, forbidden } from "@/lib/staff";
 import { tenantDb } from "@/lib/tenant";
-import { deleteParecer } from "@/lib/cloudinary";
+import { deletePublicFile } from "@/lib/files";
+import { errorSummary } from "@/lib/privacy";
 
 export async function DELETE(
   _request: Request,
@@ -21,20 +22,14 @@ export async function DELETE(
       return NextResponse.json({ error: "Planilha não encontrada" }, { status: 404 });
     }
 
-    // Extract publicId: last segment of the URL path without extension
-    const urlSegments = planilha.arquivoUrl.split("/");
-    const lastSegment = urlSegments[urlSegments.length - 1];
-    const publicIdWithFolder = urlSegments
-      .slice(urlSegments.indexOf("rst-transparente"))
-      .join("/")
-      .replace(/\.[^/.]+$/, "");
-
-    await deleteParecer(publicIdWithFolder || lastSegment.replace(/\.[^/.]+$/, ""));
+    // public_id = caminho depois de /upload/[v123/], sem a extensão (pasta antiga ou da organização)
+    const publicId = /\/upload\/(?:v\d+\/)?(.+?)(?:\.[a-z0-9]+)?$/i.exec(new URL(planilha.arquivoUrl).pathname)?.[1];
+    if (publicId) await deletePublicFile(decodeURIComponent(publicId));
     await db.planilhaDownload.delete({ where: { id } });
 
     return NextResponse.json({ success: true });
   } catch (err) {
-    console.error("Erro ao excluir planilha:", err);
+    console.error("Erro ao excluir planilha:", errorSummary(err));
     return NextResponse.json({ error: "Erro ao excluir planilha" }, { status: 500 });
   }
 }

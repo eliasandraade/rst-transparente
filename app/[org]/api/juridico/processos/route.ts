@@ -8,6 +8,7 @@ import {
   registrarAuditoria,
 } from "@/lib/juridico";
 import type { ProcessoStatus } from "@prisma/client";
+import { errorSummary } from "@/lib/privacy";
 
 const VALID_STATUS = ["ATIVO", "SUSPENSO", "ENCERRADO", "ARQUIVADO"] as const;
 
@@ -93,7 +94,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: err.issues[0].message }, { status: 400 });
     }
     const msg = err instanceof Error ? err.message : String(err);
-    console.error("[POST /api/juridico/processos]", err);
+    console.error("[POST /api/juridico/processos]", errorSummary(err));
     return NextResponse.json({ error: `Erro ao cadastrar processo: ${msg}` }, { status: 500 });
   }
 }
@@ -133,7 +134,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(processos);
   } catch (err) {
-    console.error("[GET /api/juridico/processos]", err);
+    console.error("[GET /api/juridico/processos]", errorSummary(err));
     return NextResponse.json({ error: "Erro ao buscar processos." }, { status: 500 });
   }
 }
