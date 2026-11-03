@@ -8,6 +8,7 @@ import FiltroPeriodo from "@/components/public/FiltrodePeriodo";
 import type { LancamentoComCategoria } from "@/types";
 import type { Metadata } from "next";
 import { TrendingUp, TrendingDown, Scale } from "lucide-react";
+import { sumMoney, moneyToNumber } from "@/lib/money";
 
 export const metadata: Metadata = {
   title: "Receitas e Despesas",
@@ -29,8 +30,10 @@ async function getDadosFinanceiros(periodo: string) {
   const receitas = lancamentos.filter((l) => l.tipo === "RECEITA");
   const despesas = lancamentos.filter((l) => l.tipo === "DESPESA");
 
-  const totalReceitas = receitas.reduce((acc, l) => acc + Number(l.valor), 0);
-  const totalDespesas = despesas.reduce((acc, l) => acc + Number(l.valor), 0);
+  const receitasExatas = sumMoney(receitas.map((l) => l.valor));
+  const despesasExatas = sumMoney(despesas.map((l) => l.valor));
+  const totalReceitas = moneyToNumber(receitasExatas);
+  const totalDespesas = moneyToNumber(despesasExatas);
 
   const periodosComDados = await prisma.lancamento.findMany({
     where: { status: "PUBLICADO" },
@@ -44,7 +47,7 @@ async function getDadosFinanceiros(periodo: string) {
     despesas: despesas as unknown as LancamentoComCategoria[],
     totalReceitas,
     totalDespesas,
-    saldo: totalReceitas - totalDespesas,
+    saldo: moneyToNumber(receitasExatas.minus(despesasExatas)),
     periodosDisponiveis: periodosComDados.map((p) => p.periodo),
   };
 }

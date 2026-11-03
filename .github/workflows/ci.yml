@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint · Tipos · Testes de unidade
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+
+  integration:
+    name: Migrations · Integração (PostgreSQL + Redis reais) · Build
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: cond
+          POSTGRES_PASSWORD: cond-ci
+          POSTGRES_DB: cond_test
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U cond -d cond_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://cond:cond-ci@localhost:5432/cond_test
+      SHADOW_DATABASE_URL: postgresql://cond:cond-ci@localhost:5432/cond_shadow
+      REDIS_URL: redis://localhost:6379
+      CLIENT_IP_HEADER: x-real-ip
+      NEXTAUTH_SECRET: ci-only-secret-not-used-anywhere-else
+      NEXTAUTH_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - name: Banco de sombra para conferir schema × migrations
+        run: PGPASSWORD=cond-ci psql -h localhost -U cond -d cond_test -c "CREATE DATABASE cond_shadow"
+      - name: schema.prisma e migrations em sincronia
+        run: npx prisma migrate diff --from-migrations prisma/migrations --to-schema-datamodel prisma/schema.prisma --shadow-database-url "$SHADOW_DATABASE_URL" --exit-code
+      - name: Migrations num banco limpo
+        run: npx prisma migrate deploy
+      - run: npm run test:integration
+      - run: npm run build

@@ -2,8 +2,9 @@
 buildCommand = "npx prisma generate && npm run build"
 
 [deploy]
-startCommand = "npm run start"
-healthcheckPath = "/"
-healthcheckTimeout = 30
+# O esquema muda só por migration versionada (prisma/migrations), nunca por db push.
+startCommand = "npx prisma migrate deploy && npm run start"
+healthcheckPath = "/api/health"
+healthcheckTimeout = 60
 restartPolicyType = "ON_FAILURE"
 restartPolicyMaxRetries = 3

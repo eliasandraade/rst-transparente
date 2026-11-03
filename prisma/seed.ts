@@ -1,17 +1,35 @@
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
 
+/**
+ * Seed de DEMONSTRAÇÃO, só para desenvolvimento local. Nunca roda em produção,
+ * nunca tem senha padrão e nunca imprime credenciais: exige ALLOW_DEMO_SEED=1,
+ * SEED_ADMIN_EMAIL e SEED_ADMIN_PASSWORD (12+ caracteres) no ambiente de quem roda.
+ * O esquema vem das migrations (prisma migrate deploy), não daqui.
+ */
 const prisma = new PrismaClient();
 
+function demoSeedSettings(): { email: string; password: string; name: string } {
+  if (process.env.NODE_ENV === "production" || process.env.ALLOW_DEMO_SEED !== "1") {
+    throw new Error("seed de demonstração recusado: só com ALLOW_DEMO_SEED=1 e fora de produção");
+  }
+  const email = process.env.SEED_ADMIN_EMAIL?.trim().toLowerCase();
+  const password = process.env.SEED_ADMIN_PASSWORD ?? "";
+  if (!email || password.length < 12) {
+    throw new Error("defina SEED_ADMIN_EMAIL e SEED_ADMIN_PASSWORD (12+ caracteres); não há valores padrão");
+  }
+  return { email, password, name: process.env.SEED_ADMIN_NAME?.trim() || "Administrador" };
+}
+
 async function main() {
-  console.log("🌱 Iniciando seed do banco de dados...");
+  const settings = demoSeedSettings();
+  console.log("Seed de demonstração...");
 
   // ─── Admin master ────────────────────────────────────────────────────────────
-  const adminEmail = process.env.SEED_ADMIN_EMAIL ?? "admin@condominio.com";
-  const adminSenha = process.env.SEED_ADMIN_PASSWORD ?? "Mudar@123";
-  const adminNome = process.env.SEED_ADMIN_NAME ?? "Administrador";
+  const adminEmail = settings.email;
+  const adminNome = settings.name;
 
-  const senhaHash = await bcrypt.hash(adminSenha, 12);
+  const senhaHash = await bcrypt.hash(settings.password, 12);
 
   const admin = await prisma.user.upsert({
     where: { email: adminEmail },
@@ -23,7 +41,7 @@ async function main() {
       role: "MASTER",
     },
   });
-  console.log(`✅ Admin criado: ${admin.email}`);
+  console.log(`Conta administrativa de demonstração pronta: ${admin.id}`);
 
   // ─── Configuração do portal ───────────────────────────────────────────────────
   await prisma.configPortal.upsert({
@@ -35,7 +53,7 @@ async function main() {
       periodoAtivo: new Date().toISOString().slice(0, 7),
     },
   });
-  console.log("✅ Configuração do portal criada");
+  console.log("Configuração do portal pronta");
 
   // ─── Categorias padrão ────────────────────────────────────────────────────────
   const categoriasReceita = [
@@ -84,20 +102,12 @@ async function main() {
     });
   }
 
-  console.log(
-    `✅ ${categoriasReceita.length + categoriasDespesa.length} categorias criadas`
-  );
-
-  console.log("\n🎉 Seed concluído com sucesso!");
-  console.log(`\n📋 Credenciais de acesso:`);
-  console.log(`   Email: ${adminEmail}`);
-  console.log(`   Senha: ${adminSenha}`);
-  console.log(`\n⚠️  Altere a senha após o primeiro login!`);
+  console.log(`${categoriasReceita.length + categoriasDespesa.length} categorias prontas`);
 }
 
 main()
   .catch((e) => {
-    console.error("❌ Erro no seed:", e);
+    console.error(`Seed não concluído: ${e instanceof Error ? e.message : String(e)}`);
     process.exit(1);
   })
   .finally(async () => {

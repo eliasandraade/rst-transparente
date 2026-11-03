@@ -2,11 +2,12 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { moneySchema } from "@/lib/money";
 import { registrarAuditoria } from "@/lib/juridico";
 
 const PatchMultaSchema = z.object({
   status: z.enum(["APLICADA", "NOTIFICADA", "CONTESTADA", "MANTIDA", "CANCELADA", "PAGA", "VENCIDA"]).optional(),
-  valor: z.number().positive().optional(),
+  valor: moneySchema({ positive: true }).optional(),
   dataVencimento: z.string().optional().nullable(),
   dataPagamento: z.string().optional().nullable(),
   descricaoInterna: z.string().max(2000).optional().nullable(),
