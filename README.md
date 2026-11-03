@@ -54,6 +54,7 @@ de produção de pé.
 | `IP_HASH_SECRET` | Pseudônimo de IP por organização (obrigatória em produção; `docs/orken-cond/lgpd.md`) |
 | `DATAJUD_API_KEY` | Sincronização de processos (tribunal por organização) |
 | `LEGACY_HOST_ORGANIZATION` | Host antigo de um condomínio só → `308` para `/{slug}/...` |
+| `LEGACY_HOST_TARGET` | Cutover: o host antigo manda tudo para o mesmo caminho nesta origem (`https://cond.orken.com.br`) |
 | `ORKEN_*`, `PLATFORM_API_URL`, `APP_BASE_URL` | Orken ID e Platform: todas ou nenhuma (`.env.example`) |
 
 ## Deploy

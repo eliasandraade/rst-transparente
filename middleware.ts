@@ -9,6 +9,8 @@ import { STATIC_SECURITY_HEADERS, contentSecurityPolicy, newNonce } from "@/lib/
  * Host legado de um condomínio só ("www.transparenciarst.com.br=santissima-trindade"):
  * caminhos antigos (/financeiro, /admin/...) seguem funcionando, com 308 para o
  * caminho do condomínio. Lista em LEGACY_HOST_ORGANIZATION, separada por vírgula.
+ * Com LEGACY_HOST_TARGET (a origem do produto, no cutover), o 308 vai para o mesmo
+ * caminho nela: links antigos e QR codes continuam valendo, já no endereço novo.
  */
 function legacyOrganization(host: string | null): string | null {
   if (!host) return null;
@@ -17,6 +19,18 @@ function legacyOrganization(host: string | null): string | null {
     if (legacyHost && slug && legacyHost === host.toLowerCase() && isOrganizationSlug(slug)) return slug;
   }
   return null;
+}
+
+/** Origem do produto para onde o host legado manda tudo depois do cutover (só HTTPS). */
+function legacyTarget(): string | null {
+  const value = process.env.LEGACY_HOST_TARGET?.trim();
+  if (!value) return null;
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:" ? url.origin : null;
+  } catch {
+    return null;
+  }
 }
 
 /** Caminhos do produto que nunca são de um condomínio. */
@@ -54,11 +68,18 @@ function route(req: NextRequest, nonce: string, csp: string): NextResponse {
   const { pathname, search } = req.nextUrl;
 
   const legacy = legacyOrganization(req.headers.get("host"));
-  if (legacy && !PRODUCT_PATHS.test(pathname) && !pathname.startsWith(`/${legacy}/`) && pathname !== `/${legacy}`) {
-    const target = req.nextUrl.clone();
-    target.pathname = pathname === "/" ? `/${legacy}` : `/${legacy}${pathname}`;
-    target.search = search;
-    return NextResponse.redirect(target, 308);
+  if (legacy) {
+    const inOrganization = pathname === `/${legacy}` || pathname.startsWith(`/${legacy}/`);
+    // Caminho equivalente: rotas do produto ficam como estão; o resto vai para dentro do condomínio.
+    const path = PRODUCT_PATHS.test(pathname) || inOrganization ? pathname : pathname === "/" ? `/${legacy}` : `/${legacy}${pathname}`;
+    const canonical = legacyTarget();
+    if (canonical) return NextResponse.redirect(new URL(`${path}${search}`, canonical), 308);
+    if (path !== pathname) {
+      const target = req.nextUrl.clone();
+      target.pathname = path;
+      target.search = search;
+      return NextResponse.redirect(target, 308);
+    }
   }
 
   const slug = pathname.split("/")[1];
