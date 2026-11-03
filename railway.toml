@@ -3,7 +3,8 @@ buildCommand = "npx prisma generate && npm run build"
 
 [deploy]
 # O esquema muda só por migration versionada (prisma/migrations), nunca por db push.
-startCommand = "npx prisma migrate deploy && npm run start"
+# scripts/db-migrate.mjs faz o baseline único do banco criado por db push e roda migrate deploy.
+startCommand = "node scripts/db-migrate.mjs && npm run start"
 healthcheckPath = "/api/health"
 healthcheckTimeout = 60
 restartPolicyType = "ON_FAILURE"
