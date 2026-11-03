@@ -1,5 +1,7 @@
 "use client";
 
+
+import { orgFetch } from "@/lib/org-navigation";
 import { useState } from "react";
 import { KeyRound, Loader2, CheckCircle } from "lucide-react";
 
@@ -23,7 +25,7 @@ export default function AlterarSenhaForm() {
 
     setSalvando(true);
     try {
-      const res = await fetch("/api/perfil", {
+      const res = await orgFetch("/api/perfil", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ senhaAtual, novaSenha, confirmarSenha }),

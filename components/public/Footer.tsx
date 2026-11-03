@@ -1,7 +1,9 @@
-import Link from "next/link";
+import Link from "@/lib/org-navigation";
 import { Shield } from "lucide-react";
+import { requireTenant } from "@/lib/tenant";
 
-export default function Footer() {
+export default async function Footer() {
+  const { org } = await requireTenant();
   const ano = new Date().getFullYear();
 
   return (
@@ -17,7 +19,7 @@ export default function Footer() {
             />
             <div>
               <p className="text-sm font-medium text-foreground leading-tight">
-                Condomínio Residencial Santíssima Trindade
+                {org.name}
               </p>
               <p className="text-xs text-[var(--foreground-subtle)] mt-0.5">
                 Informações publicadas pelo Conselho Fiscal

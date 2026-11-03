@@ -1,6 +1,6 @@
 "use client";
 
-import Link from "next/link";
+import Link from "@/lib/org-navigation";
 import { ArrowLeft, Paperclip, Lock } from "lucide-react";
 import { formatarDataExtenso, formatarDataHoraAmigavel } from "@/lib/utils";
 

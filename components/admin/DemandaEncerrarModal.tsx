@@ -1,7 +1,9 @@
 "use client";
 
+
+import { orgFetch } from "@/lib/org-navigation";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useOrgRouter as useRouter } from "@/lib/org-navigation";
 import { AlertTriangle, X, Loader2 } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 
@@ -22,7 +24,7 @@ export default function DemandaEncerrarModal({ demandId }: DemandaEncerrarModalP
     setLoading(true);
 
     try {
-      const res = await fetch(`/api/demandas/${demandId}/encerrar`, {
+      const res = await orgFetch(`/api/demandas/${demandId}/encerrar`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ finalStatus, message: message || null }),

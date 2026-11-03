@@ -1,7 +1,9 @@
 "use client";
 
+
+import { orgFetch } from "@/lib/org-navigation";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useOrgRouter as useRouter } from "@/lib/org-navigation";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 
 interface Props {
@@ -17,7 +19,7 @@ export default function PublicarLancamentoButton({ id, status }: Props) {
   async function handleClick() {
     setCarregando(true);
     try {
-      await fetch(`/api/lancamentos/${id}/status`, {
+      await orgFetch(`/api/lancamentos/${id}/status`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

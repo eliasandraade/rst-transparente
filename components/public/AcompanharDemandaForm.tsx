@@ -1,8 +1,11 @@
 "use client";
 
+
+import { orgFetch } from "@/lib/org-navigation";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useOrgRouter as useRouter } from "@/lib/org-navigation";
 import { Search, Loader2 } from "lucide-react";
+import { useOrganization } from "@/components/org/OrganizationProvider";
 
 interface AcompanharDemandaFormProps {
   defaultProtocol?: string;
@@ -11,6 +14,7 @@ interface AcompanharDemandaFormProps {
 export default function AcompanharDemandaForm({
   defaultProtocol = "",
 }: AcompanharDemandaFormProps) {
+  const organization = useOrganization();
   const router = useRouter();
   const [protocol, setProtocol] = useState(defaultProtocol);
   const [accessCode, setAccessCode] = useState("");
@@ -23,7 +27,7 @@ export default function AcompanharDemandaForm({
     setLoading(true);
 
     try {
-      const res = await fetch("/api/demandas/lookup", {
+      const res = await orgFetch("/api/demandas/lookup", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -75,12 +79,12 @@ export default function AcompanharDemandaForm({
           value={protocol}
           onChange={(e) => setProtocol(e.target.value.toUpperCase())}
           className="input font-mono tracking-wider uppercase"
-          placeholder="Ex: RST-2026-K7M9Q2"
+          placeholder={`Ex: ${organization.protocolPrefix}-${new Date().getFullYear()}-K7M9Q2`}
           autoComplete="off"
           spellCheck={false}
         />
         <p className="text-xs text-[var(--foreground-subtle)] mt-1">
-          O protocolo começa com RST- seguido do ano e um código.
+          O protocolo começa com {organization.protocolPrefix}- seguido do ano e um código.
         </p>
       </div>
 

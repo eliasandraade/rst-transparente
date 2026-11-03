@@ -9,8 +9,9 @@ export function generateCode(length = 6): string {
   return Array.from(bytes, (b) => CHARSET[b % CHARSET.length]).join("");
 }
 
-export function generateProtocol(year: number): string {
-  return `RST-${year}-${generateCode(6)}`;
+/** Protocolo da Central de Demandas: prefixo da organização, ano e código ("RST-2026-K7M9Q2"). */
+export function generateProtocol(prefix: string, year: number): string {
+  return `${prefix}-${year}-${generateCode(6)}`;
 }
 
 export async function hashAccessCode(plainCode: string): Promise<string> {

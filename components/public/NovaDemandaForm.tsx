@@ -1,5 +1,7 @@
 "use client";
 
+
+import { orgFetch } from "@/lib/org-navigation";
 import { useState, useRef, useEffect } from "react";
 import { Paperclip, X, Loader2 } from "lucide-react";
 
@@ -60,7 +62,7 @@ export default function NovaDemandaForm({ onSuccess }: NovaDemandaFormProps) {
     try {
       const formData = new FormData();
       formData.append("file", file);
-      const res = await fetch("/api/demandas/anexo", { method: "POST", body: formData });
+      const res = await orgFetch("/api/demandas/anexo", { method: "POST", body: formData });
       const json = await res.json().catch(() => ({}));
       if (!res.ok) {
         setError(json.error ?? "Erro ao enviar arquivo. Tente novamente.");
@@ -91,7 +93,7 @@ export default function NovaDemandaForm({ onSuccess }: NovaDemandaFormProps) {
     const fd = new FormData(form);
 
     try {
-      const res = await fetch("/api/demandas", {
+      const res = await orgFetch("/api/demandas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

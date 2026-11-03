@@ -1,7 +1,9 @@
 "use client";
 
+
+import { orgFetch } from "@/lib/org-navigation";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useOrgRouter as useRouter } from "@/lib/org-navigation";
 
 interface Config {
   id: string;
@@ -34,7 +36,7 @@ export default function ConfiguracoesForm({ config }: Props) {
     };
 
     try {
-      const res = await fetch("/api/configuracoes", {
+      const res = await orgFetch("/api/configuracoes", {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

@@ -1,7 +1,9 @@
 "use client";
 
+
+import { orgFetch } from "@/lib/org-navigation";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useOrgRouter as useRouter } from "@/lib/org-navigation";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 
 type StatusObra = "PLANEJADO" | "EM_ANDAMENTO" | "CONCLUIDO" | "CANCELADO";
@@ -64,7 +66,7 @@ export default function ObraForm({ initialData }: ObraFormProps) {
       const url = isEdicao ? `/api/obras/${initialData.id}` : "/api/obras";
       const method = isEdicao ? "PATCH" : "POST";
 
-      const res = await fetch(url, {
+      const res = await orgFetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -90,7 +92,7 @@ export default function ObraForm({ initialData }: ObraFormProps) {
 
     setCarregando(true);
     try {
-      await fetch(`/api/obras/${initialData.id}`, { method: "DELETE" });
+      await orgFetch(`/api/obras/${initialData.id}`, { method: "DELETE" });
       router.push("/admin/obras");
       router.refresh();
     } finally {

@@ -5,11 +5,11 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "Portal da Transparência — Condomínio Residencial Santíssima Trindade",
-    template: "%s | Portal da Transparência",
+    default: "Orken COND",
+    template: "%s | Orken COND",
   },
   description:
-    "Acompanhe as finanças e prestações de contas do Condomínio Residencial Santíssima Trindade de forma clara e transparente.",
+    "Gestão, transparência e relacionamento condominial: finanças, demandas, avisos, enquetes e jurídico de cada condomínio em um só lugar.",
   robots: {
     index: true,
     follow: true,

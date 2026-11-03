@@ -1,6 +1,7 @@
 "use client";
 
-import { useRouter, usePathname, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useOrgRouter as useRouter, useOrgPathname as usePathname } from "@/lib/org-navigation";
 import { formatarPeriodo, gerarPeriodos } from "@/lib/utils";
 import { CalendarDays } from "lucide-react";
 

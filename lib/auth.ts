@@ -2,9 +2,12 @@ import NextAuth from "next-auth";
 import { authConfig } from "@/auth.config";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
-import { prisma } from "@/lib/prisma";
 import { clientIp } from "@/lib/client-ip";
 import { RATE_LIMITS, rateLimit } from "@/lib/rate-limit";
+import { findActiveOrganization, scopedClient } from "@/lib/tenant";
+
+/** bcrypt (custo 12) de um valor aleatório descartado: conta inexistente custa o mesmo que senha errada. */
+const DUMMY_PASSWORD_HASH = "$2a$12$oC7qH4I5pMqlirmEAvkpD.xeYDZfcqwz2wVQi8eYPJ6Wh.wrNzsNi";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
@@ -14,6 +17,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       credentials: {
         email: { label: "Email", type: "email" },
         password: { label: "Senha", type: "password" },
+        // Slug do condomínio da página de login: a conta é procurada só nele.
+        organization: { label: "Condomínio", type: "text" },
       },
       async authorize(credentials, request) {
         if (!credentials?.email || !credentials?.password) return null;
@@ -23,25 +28,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         // Teclado do celular costuma pôr maiúscula ou espaço no fim do e-mail
         const email = (credentials.email as string).trim().toLowerCase();
+        const password = credentials.password as string;
 
-        const user = await prisma.user.findUnique({
-          where: { email },
-        });
+        const org = await findActiveOrganization(String(credentials.organization ?? ""));
+        const user = org ? await scopedClient(org.id).user.findFirst({ where: { email } }) : null;
 
-        if (!user || !user.ativo) return null;
-
-        const senhaValida = await bcrypt.compare(
-          credentials.password as string,
-          user.password
-        );
-
-        if (!senhaValida) return null;
+        const senhaValida = await bcrypt.compare(password, user?.password ?? DUMMY_PASSWORD_HASH);
+        if (!org || !user || !user.ativo || !senhaValida) return null;
 
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           role: user.role,
+          organizationId: org.id,
+          organizationSlug: org.slug,
         };
       },
     }),

@@ -1,7 +1,8 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useOrgRouter as useRouter } from "@/lib/org-navigation";
+import { orgFetch } from "@/lib/org-navigation";
 import { Plus, X } from "lucide-react";
 
 interface EnqueteFormProps {
@@ -73,7 +74,7 @@ export default function EnqueteForm({ enqueteId, initialData }: EnqueteFormProps
       const url = isEditing ? `/api/enquetes/${enqueteId}` : "/api/enquetes";
       const method = isEditing ? "PATCH" : "POST";
 
-      const res = await fetch(url, {
+      const res = await orgFetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

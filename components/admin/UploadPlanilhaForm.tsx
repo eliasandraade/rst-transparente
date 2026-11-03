@@ -1,7 +1,9 @@
 "use client";
 
+
+import { orgFetch } from "@/lib/org-navigation";
 import { useState, useRef } from "react";
-import { useRouter } from "next/navigation";
+import { useOrgRouter as useRouter } from "@/lib/org-navigation";
 import { formatarPeriodo } from "@/lib/utils";
 import { Upload } from "lucide-react";
 
@@ -39,7 +41,7 @@ export default function UploadPlanilhaForm({ periodos }: UploadPlanilhaFormProps
       formData.append("arquivo", arquivo);
       formData.append("periodo", periodo);
 
-      const res = await fetch("/api/planilhas", {
+      const res = await orgFetch("/api/planilhas", {
         method: "POST",
         body: formData,
       });

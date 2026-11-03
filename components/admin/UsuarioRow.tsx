@@ -1,7 +1,9 @@
 "use client";
 
+
+import { orgFetch } from "@/lib/org-navigation";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useOrgRouter as useRouter } from "@/lib/org-navigation";
 
 interface Usuario {
   id: string;
@@ -37,7 +39,7 @@ export default function UsuarioRow({ usuario, labelRole, sessionRole, sessionId 
 
   async function toggleAtivo() {
     setLoading(true);
-    await fetch(`/api/usuarios/${usuario.id}`, {
+    await orgFetch(`/api/usuarios/${usuario.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ ativo: !usuario.ativo }),

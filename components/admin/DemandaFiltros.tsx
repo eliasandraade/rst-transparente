@@ -1,6 +1,7 @@
 "use client";
 
-import { useRouter, useSearchParams, usePathname } from "next/navigation";
+import { useSearchParams } from "next/navigation";
+import { useOrgRouter as useRouter, useOrgPathname as usePathname } from "@/lib/org-navigation";
 import { useCallback } from "react";
 import { Search } from "lucide-react";
 

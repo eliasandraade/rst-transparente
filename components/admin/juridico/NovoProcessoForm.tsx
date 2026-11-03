@@ -1,8 +1,10 @@
 "use client";
 
+
+import { orgFetch } from "@/lib/org-navigation";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useOrgRouter as useRouter } from "@/lib/org-navigation";
+import Link from "@/lib/org-navigation";
 import { AlertTriangle, Loader2 } from "lucide-react";
 
 export default function NovoProcessoForm() {
@@ -25,7 +27,7 @@ export default function NovoProcessoForm() {
     };
 
     try {
-      const res = await fetch("/api/juridico/processos", {
+      const res = await orgFetch("/api/juridico/processos", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

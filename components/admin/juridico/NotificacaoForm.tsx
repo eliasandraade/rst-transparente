@@ -1,14 +1,13 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useOrgRouter as useRouter } from "@/lib/org-navigation";
+import { orgFetch } from "@/lib/org-navigation";
+import Link from "@/lib/org-navigation";
 import { AlertTriangle, Loader2 } from "lucide-react";
+import UnidadeCampos from "@/components/admin/juridico/UnidadeCampos";
+import type { UnitLayout } from "@/lib/units";
 
-const BLOCOS = "ABCDEFGHI".split("");
-const UNIDADES = [1, 2, 3, 4].flatMap((pav) =>
-  [1, 2, 3, 4, 5, 6, 7, 8].map((u) => `${pav}0${u}`)
-);
 const STATUS_OPTIONS = [
   { value: "EMITIDA", label: "Emitida" },
   { value: "ENTREGUE", label: "Entregue" },
@@ -18,6 +17,8 @@ const STATUS_OPTIONS = [
 ];
 
 interface Props {
+  /** Planta do condomínio (lib/units.ts); sem ela, bloco e unidade são campos livres. */
+  layout?: UnitLayout | null;
   processos?: Array<{ id: string; numeroProcesso: string; classe: string | null }>;
   notificacaoId?: string;
   defaultValues?: {
@@ -31,7 +32,7 @@ interface Props {
   modo: "criar" | "editar";
 }
 
-export default function NotificacaoForm({ processos = [], notificacaoId, defaultValues, modo }: Props) {
+export default function NotificacaoForm({ layout = null, processos = [], notificacaoId, defaultValues, modo }: Props) {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
@@ -70,7 +71,7 @@ export default function NotificacaoForm({ processos = [], notificacaoId, default
           : `/api/juridico/notificacoes/${notificacaoId}`;
       const method = modo === "criar" ? "POST" : "PATCH";
 
-      const res = await fetch(url, {
+      const res = await orgFetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -114,22 +115,7 @@ export default function NotificacaoForm({ processos = [], notificacaoId, default
             </select>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="bloco" className="label">Bloco <span className="text-[var(--danger)]">*</span></label>
-              <select id="bloco" name="bloco" required className="select">
-                <option value="">Selecionar</option>
-                {BLOCOS.map((b) => <option key={b} value={b}>Bloco {b}</option>)}
-              </select>
-            </div>
-            <div>
-              <label htmlFor="unidade" className="label">Unidade <span className="text-[var(--danger)]">*</span></label>
-              <select id="unidade" name="unidade" required className="select">
-                <option value="">Selecionar</option>
-                {UNIDADES.map((u) => <option key={u} value={u}>{u}</option>)}
-              </select>
-            </div>
-          </div>
+          <UnidadeCampos layout={layout} />
 
           <div>
             <label htmlFor="motivo" className="label">Motivo <span className="text-[var(--danger)]">*</span></label>
