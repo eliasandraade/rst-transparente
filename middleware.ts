@@ -1,7 +1,11 @@
-import { auth } from "@/lib/auth";
+import NextAuth from "next-auth";
+import { authConfig } from "@/auth.config";
 import { NextResponse } from "next/server";
 
 const ROLES_GESTAO_USUARIOS = ["MASTER", "SINDICO"];
+
+// Runtime Edge: só a configuração sem provedor (auth.config.ts); nada de Prisma ou Redis aqui.
+const { auth } = NextAuth(authConfig);
 
 export default auth((req) => {
   const isAdminRoute = req.nextUrl.pathname.startsWith("/admin");
