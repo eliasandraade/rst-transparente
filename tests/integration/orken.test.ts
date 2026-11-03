@@ -115,7 +115,10 @@ async function callback(query: Record<string, string>): Promise<string> {
   const { GET } = await import("@/app/api/auth/orken/callback/route");
   const res = await GET(new Request(`${APP}/api/auth/orken/callback?${new URLSearchParams(query)}`));
   expect(res.status).toBe(303);
-  return res.headers.get("location")!;
+  // Location relativo (nunca a URL interna do proxy); o navegador resolve no host que usou.
+  const location = res.headers.get("location")!;
+  expect(location.startsWith("/")).toBe(true);
+  return new URL(location, APP).toString();
 }
 
 async function propostas(): Promise<number> {
@@ -178,7 +181,7 @@ describe("início do login", () => {
   it("condomínio inexistente vai ao 404 dele; sem vínculo com a Platform, desligado", async () => {
     const { GET } = await import("@/app/entrar/[slug]/route");
     const missing = await GET(new Request(`${APP}/entrar/nao-existe-${RUN}`), { params: Promise.resolve({ slug: `nao-existe-${RUN}` }) });
-    expect(new URL(missing.headers.get("location")!).pathname).toBe(`/nao-existe-${RUN}`);
+    expect(missing.headers.get("location")).toBe(`/nao-existe-${RUN}`);
   });
 });
 

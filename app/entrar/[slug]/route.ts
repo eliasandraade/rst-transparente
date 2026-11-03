@@ -5,6 +5,7 @@ import { saveTransaction } from "@/lib/orken/transaction";
 import { findActiveOrganization } from "@/lib/tenant";
 import { isOrganizationSlug } from "@/lib/tenant-path";
 import { ORKEN_TX_COOKIE } from "@/lib/session-cookies";
+import { redirectTo } from "@/lib/redirect";
 
 /**
  * Entrada da equipe pelo Orken ID: `/entrar/{slug}` (o cartão do COND na Minha Orken
@@ -12,9 +13,9 @@ import { ORKEN_TX_COOKIE } from "@/lib/session-cookies";
  * e manda ao Orken ID pedindo MFA. Com sessão no Orken ID já com MFA, é só um redirect.
  * docs/orken-cond/identidade.md.
  */
-export async function GET(request: Request, { params }: { params: Promise<{ slug: string }> }) {
+export async function GET(_request: Request, { params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const back = (path: string) => NextResponse.redirect(new URL(path, request.url), 303);
+  const back = (path: string) => redirectTo(path);
   if (!isOrganizationSlug(slug)) return back("/");
 
   const config = orkenConfig();
