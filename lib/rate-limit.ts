@@ -21,8 +21,10 @@ const globalForRedis = globalThis as unknown as { rateLimitRedis?: Redis | null 
 function redis(): Redis | null {
   if (globalForRedis.rateLimitRedis !== undefined) return globalForRedis.rateLimitRedis;
   const url = process.env.REDIS_URL;
+  // A fila offline fica ligada (o primeiro comando espera a conexão abrir), mas com
+  // prazos curtos: Redis fora vira "unavailable" em ~2 s, nunca uma espera longa.
   globalForRedis.rateLimitRedis = url
-    ? new Redis(url, { maxRetriesPerRequest: 1, enableOfflineQueue: false, lazyConnect: false })
+    ? new Redis(url, { maxRetriesPerRequest: 1, connectTimeout: 2_000, commandTimeout: 1_500 })
     : null;
   globalForRedis.rateLimitRedis?.on("error", (error) => {
     console.error(`[rate-limit] Redis: ${error.message}`);
