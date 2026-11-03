@@ -91,3 +91,12 @@ jobs:
           test "$(psql -h localhost -U cond -d cond_drifted -Atc "select to_regclass('public._prisma_migrations') is null")" = "t"
       - run: npm run test:integration
       - run: npm run build
+      - name: Servidor de produção de pé (middleware Edge, login, saúde)
+        run: |
+          npm run start -- -p 3100 > /tmp/next.log 2>&1 &
+          for i in $(seq 1 30); do curl -sf http://localhost:3100/api/health >/dev/null && break; sleep 1; done
+          check() { code=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:3100$1"); echo "$1 -> $code (esperado $2)"; [ "$code" = "$2" ] || { tail -50 /tmp/next.log; exit 1; }; }
+          check /api/health 200
+          check /admin/login 200
+          check /admin/dashboard 307
+          if grep -E "TypeError|Error:" /tmp/next.log; then echo "erro no log do servidor"; exit 1; fi
