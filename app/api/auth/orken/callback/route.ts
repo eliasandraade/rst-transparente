@@ -1,10 +1,10 @@
 import { timingSafeEqual } from "node:crypto";
-import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { orkenConfig } from "@/lib/orken/config";
 import { takeTransaction } from "@/lib/orken/transaction";
 import { completeOrkenLogin } from "@/lib/orken/login";
 import { ORKEN_TX_COOKIE } from "@/lib/session-cookies";
+import { redirectTo } from "@/lib/redirect";
 
 /**
  * Retorno do Orken ID (`orken-cond-web`). O state precisa ser o do cookie deste
@@ -15,9 +15,8 @@ import { ORKEN_TX_COOKIE } from "@/lib/session-cookies";
 export async function GET(request: Request) {
   const config = orkenConfig();
   const url = new URL(request.url);
-  const base = config?.appBaseUrl ?? url.origin;
   const go = (path: string) => {
-    const response = NextResponse.redirect(`${base}${path}`, 303);
+    const response = redirectTo(path);
     // Mesmos atributos do cookie gravado: um `__Host-` sem `Secure` não seria apagado.
     response.cookies.set(ORKEN_TX_COOKIE, "", {
       httpOnly: true,
