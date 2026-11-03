@@ -10,6 +10,7 @@ import {
   sanitizeText,
   getClientIp,
 } from "@/lib/demandas";
+import { RATE_LIMITS, rateLimit, rateLimitResponseBody } from "@/lib/rate-limit";
 
 const VALID_STATUSES = ["RECEBIDA", "EM_ANALISE", "EM_ANDAMENTO", "RESOLVIDA", "ENCERRADA_SEM_ACAO"] as const;
 const VALID_CATEGORIES = ["MANUTENCAO", "SEGURANCA", "LIMPEZA", "FINANCEIRO", "BARULHO", "ILUMINACAO", "VAZAMENTO", "SUGESTAO", "RECLAMACAO", "OUTROS"] as const;
@@ -36,6 +37,10 @@ const CreateDemandSchema = z.object({
 });
 
 export async function POST(request: Request) {
+  const limited = await rateLimit(RATE_LIMITS.demandCreate, getClientIp(request));
+  if (!limited.allowed) {
+    return NextResponse.json(rateLimitResponseBody(limited), { status: limited.reason === "limited" ? 429 : 503 });
+  }
   try {
     const body = await request.json();
     const data = CreateDemandSchema.parse(body);

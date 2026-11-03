@@ -2,6 +2,8 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { clientIp } from "@/lib/client-ip";
+import { RATE_LIMITS, rateLimit, rateLimitResponseBody } from "@/lib/rate-limit";
 
 const PropostaSchema = z.object({
   texto: z.string().min(10, "O texto deve ter no mínimo 10 caracteres").max(1000, "O texto deve ter no máximo 1000 caracteres"),
@@ -26,6 +28,10 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
+  const limited = await rateLimit(RATE_LIMITS.proposalCreate, clientIp(request));
+  if (!limited.allowed) {
+    return NextResponse.json(rateLimitResponseBody(limited), { status: limited.reason === "limited" ? 429 : 503 });
+  }
   try {
     const body = await request.json();
     const dados = PropostaSchema.parse(body);

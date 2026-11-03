@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { moneySchema } from "@/lib/money";
 
 const UpdateSchema = z.object({
   tipo: z.enum(["RECEITA", "DESPESA"]),
   categoriaId: z.string().min(1),
   descricao: z.string().min(1).max(200),
-  valor: z.number().positive(),
+  valor: moneySchema({ positive: true }),
   data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   fornecedor: z.string().max(150).nullable().optional(),
   observacoes: z.string().max(500).nullable().optional(),

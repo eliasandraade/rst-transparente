@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { moneySchema } from "@/lib/money";
 
 const LancamentoSchema = z.object({
   tipo: z.enum(["RECEITA", "DESPESA"]),
   categoriaId: z.string().min(1),
   descricao: z.string().min(1).max(200),
-  valor: z.number().positive(),
+  valor: moneySchema({ positive: true }),
   data: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   fornecedor: z.string().max(150).nullable().optional(),
   observacoes: z.string().max(500).nullable().optional(),
@@ -18,12 +19,16 @@ export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const periodo = searchParams.get("periodo");
-    const status = searchParams.get("status");
+    // Sem sessão, só o que está publicado: rascunho nunca sai para o público,
+    // seja qual for o parâmetro pedido.
+    const session = await auth();
+    const pedido = searchParams.get("status");
+    const status = !session ? "PUBLICADO" : pedido === "PUBLICADO" || pedido === "RASCUNHO" ? pedido : null;
 
     const lancamentos = await prisma.lancamento.findMany({
       where: {
         ...(periodo ? { periodo } : {}),
-        ...(status ? { status: status as "PUBLICADO" | "RASCUNHO" } : {}),
+        ...(status ? { status } : {}),
       },
       include: { categoria: { select: { id: true, nome: true, cor: true } } },
       orderBy: [{ tipo: "asc" }, { data: "asc" }],

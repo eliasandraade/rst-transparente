@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { uploadAnexoDemanda } from "@/lib/cloudinary";
-import { checkRateLimit, getClientIp } from "@/lib/demandas";
+import { clientIp } from "@/lib/client-ip";
+import { RATE_LIMITS, rateLimit, rateLimitResponseBody } from "@/lib/rate-limit";
 
 // Upload público de anexo da demanda (morador não tem login).
 // Separado de /api/upload, que continua restrito ao admin (pareceres).
@@ -19,11 +20,9 @@ function detectarTipo(buf: Buffer): "jpg" | "png" | "webp" | "pdf" | null {
 }
 
 export async function POST(request: Request) {
-  if (!checkRateLimit(`anexo:${getClientIp(request)}`, 10, 10 * 60_000)) {
-    return NextResponse.json(
-      { error: "Muitos envios seguidos. Aguarde alguns minutos e tente novamente." },
-      { status: 429 }
-    );
+  const limited = await rateLimit(RATE_LIMITS.demandAttachment, clientIp(request));
+  if (!limited.allowed) {
+    return NextResponse.json(rateLimitResponseBody(limited), { status: limited.reason === "limited" ? 429 : 503 });
   }
 
   try {

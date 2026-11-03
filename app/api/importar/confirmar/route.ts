@@ -2,11 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { moneySchema } from "@/lib/money";
 
 const itemSchema = z.object({
   tipo: z.enum(["RECEITA", "DESPESA"]),
   descricao: z.string().min(1),
-  valor: z.number().positive(),
+  valor: moneySchema({ positive: true, fromSpreadsheet: true }),
   categoriaId: z.string().min(1, "Selecione uma categoria para todos os itens"),
   periodo: z.string().regex(/^\d{4}-\d{2}$/),
 });

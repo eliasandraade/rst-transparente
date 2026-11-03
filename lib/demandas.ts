@@ -21,42 +21,16 @@ export async function verifyAccessCode(
   input: string,
   hash: string
 ): Promise<boolean> {
-  return bcrypt.compare(input, hash);
+  // O código é gerado em maiúsculas; o morador pode digitar em minúsculas (spec da Central de Demandas).
+  return bcrypt.compare(input.trim().toUpperCase(), hash);
 }
+
+/** bcrypt de um código que nunca confere: a consulta paga o mesmo custo com ou sem protocolo existente. */
+export const DUMMY_ACCESS_CODE_HASH = "$2a$10$Rz8C8MrAqiWJl3KOxIcZueUn/hj7k4PrEzMECsnrFpwA/sDwwjtOm";
 
 export function sanitizeText(text: string): string {
   return text.replace(/<[^>]*>/g, "").trim();
 }
 
-// Rate limiter in-memory (MVP — migrar para Redis se necessário)
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
-}
-const rateLimitMap = new Map<string, RateLimitEntry>();
-
-export function checkRateLimit(
-  ip: string,
-  limit = 5,
-  windowMs = 60_000
-): boolean {
-  const now = Date.now();
-  const entry = rateLimitMap.get(ip);
-
-  if (!entry || now > entry.resetAt) {
-    rateLimitMap.set(ip, { count: 1, resetAt: now + windowMs });
-    return true;
-  }
-
-  if (entry.count >= limit) return false;
-
-  entry.count++;
-  return true;
-}
-
-export function getClientIp(request: Request): string {
-  return (
-    request.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    "unknown"
-  );
-}
+// Rate limit distribuído: lib/rate-limit.ts. IP confiável: lib/client-ip.ts.
+export { clientIp as getClientIp } from "@/lib/client-ip";
