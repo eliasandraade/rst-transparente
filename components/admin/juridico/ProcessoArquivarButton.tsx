@@ -1,7 +1,9 @@
 "use client";
 
+
+import { orgFetch } from "@/lib/org-navigation";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useOrgRouter as useRouter } from "@/lib/org-navigation";
 import { Archive, ArchiveRestore, Loader2 } from "lucide-react";
 
 interface Props {
@@ -17,7 +19,7 @@ export default function ProcessoArquivarButton({ processoId, ativo }: Props) {
   async function executar() {
     setLoading(true);
     try {
-      const res = await fetch(`/api/juridico/processos/${processoId}`, {
+      const res = await orgFetch(`/api/juridico/processos/${processoId}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

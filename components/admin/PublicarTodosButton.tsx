@@ -1,7 +1,9 @@
 "use client";
 
+
+import { orgFetch } from "@/lib/org-navigation";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useOrgRouter as useRouter } from "@/lib/org-navigation";
 import { CheckCheck } from "lucide-react";
 
 interface Props {
@@ -19,7 +21,7 @@ export default function PublicarTodosButton({ periodo, totalRascunhos }: Props) 
     if (!confirm(`Publicar todos os ${totalRascunhos} rascunhos de ${periodo}? Eles ficarão visíveis no portal público.`)) return;
 
     setLoading(true);
-    await fetch("/api/lancamentos/publicar-todos", {
+    await orgFetch("/api/lancamentos/publicar-todos", {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ periodo }),

@@ -1,5 +1,7 @@
 "use client";
 
+
+import { orgFetch } from "@/lib/org-navigation";
 import { useState, useEffect } from "react";
 import { BarChart2, CheckCircle, Clock } from "lucide-react";
 
@@ -69,7 +71,7 @@ export default function EnqueteCard({ enquete }: EnqueteCardProps) {
 
     setEnviando(true);
     try {
-      const res = await fetch(`/api/enquetes/${enquete.id}/votar`, {
+      const res = await orgFetch(`/api/enquetes/${enquete.id}/votar`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ opcaoIds: selecionados }),

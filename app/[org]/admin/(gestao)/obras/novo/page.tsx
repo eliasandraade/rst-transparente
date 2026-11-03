@@ -1,0 +1,32 @@
+export const dynamic = "force-dynamic";
+
+import ObraForm from "@/components/admin/ObraForm";
+import Link from "@/lib/org-navigation";
+import type { Metadata } from "next";
+import { ArrowLeft } from "lucide-react";
+import { requireStaff } from "@/lib/staff";
+
+export const metadata: Metadata = { title: "Nova Obra" };
+
+export default async function NovaObraPage() {
+  await requireStaff();
+  return (
+    <div className="space-y-6">
+      <div>
+        <Link
+          href="/admin/obras"
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground mb-4 min-h-[auto]"
+        >
+          <ArrowLeft className="w-4 h-4" aria-hidden="true" />
+          Voltar para obras
+        </Link>
+        <h1 className="text-2xl font-bold">Nova Obra</h1>
+        <p className="text-muted-foreground">Cadastre um novo projeto ou obra do condomínio</p>
+      </div>
+
+      <div className="card">
+        <ObraForm />
+      </div>
+    </div>
+  );
+}

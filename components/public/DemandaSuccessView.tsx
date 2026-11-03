@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Link from "next/link";
+import Link from "@/lib/org-navigation";
 import { CheckCircle2, Copy, Check, AlertTriangle, FileSearch } from "lucide-react";
 
 interface DemandaSuccessViewProps {

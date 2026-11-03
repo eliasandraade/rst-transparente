@@ -1,5 +1,7 @@
-// Prisma Schema — Portal da Transparência
-// Condomínio Residencial Santíssima Trindade
+// Prisma Schema — Orken COND
+// Cada condomínio é uma organização; todo dado de domínio pertence a uma
+// (organizationId), isolado no backend (lib/tenant.ts) e no banco (RLS).
+// docs/orken-cond/arquitetura.md
 
 generator client {
   provider = "prisma-client-js"
@@ -14,7 +16,9 @@ datasource db {
 
 model User {
   id                   String              @id @default(cuid())
-  email                String              @unique
+  organizationId       String?             @db.Uuid
+  organization         Organization?       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  email                String
   name                 String
   password             String
   role                 Role                @default(CONSELHO)
@@ -26,6 +30,8 @@ model User {
   multasAplicadas      Multa[]             @relation("MultaCriador")
   juridicoAuditorias   JuridicoAuditoria[] @relation("JuridicoAuditor")
 
+  @@unique([organizationId, email])
+  @@index([organizationId])
   @@map("users")
 }
 
@@ -39,15 +45,18 @@ enum Role {
 // ─── Categorias financeiras ───────────────────────────────────────────────────
 
 model Categoria {
-  id          String         @id @default(cuid())
-  nome        String
-  tipo        TipoLancamento
-  cor         String         @default("#64748B") // hex para gráficos
-  ativo       Boolean        @default(true)
-  ordem       Int            @default(0)
-  lancamentos Lancamento[]
-  createdAt   DateTime       @default(now())
+  id             String         @id @default(cuid())
+  organizationId String?        @db.Uuid
+  organization   Organization?  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  nome           String
+  tipo           TipoLancamento
+  cor            String         @default("#64748B") // hex para gráficos
+  ativo          Boolean        @default(true)
+  ordem          Int            @default(0)
+  lancamentos    Lancamento[]
+  createdAt      DateTime       @default(now())
 
+  @@index([organizationId])
   @@map("categorias")
 }
 
@@ -59,23 +68,26 @@ enum TipoLancamento {
 // ─── Lançamentos financeiros (receitas e despesas) ────────────────────────────
 
 model Lancamento {
-  id          String           @id @default(cuid())
-  tipo        TipoLancamento
-  categoriaId String
-  categoria   Categoria        @relation(fields: [categoriaId], references: [id])
-  descricao   String
-  valor       Decimal          @db.Decimal(12, 2)
-  data        DateTime         @db.Date
-  fornecedor  String?
-  observacoes String?
-  periodo     String           // "2025-03" (YYYY-MM)
-  status      StatusPublicacao @default(RASCUNHO)
-  createdAt   DateTime         @default(now())
-  updatedAt   DateTime         @updatedAt
+  id             String           @id @default(cuid())
+  organizationId String?          @db.Uuid
+  organization   Organization?    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  tipo           TipoLancamento
+  categoriaId    String
+  categoria      Categoria        @relation(fields: [categoriaId], references: [id])
+  descricao      String
+  valor          Decimal          @db.Decimal(12, 2)
+  data           DateTime         @db.Date
+  fornecedor     String?
+  observacoes    String?
+  periodo        String // "2025-03" (YYYY-MM)
+  status         StatusPublicacao @default(RASCUNHO)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
   @@index([periodo])
   @@index([tipo])
   @@index([status])
+  @@index([organizationId])
   @@map("lancamentos")
 }
 
@@ -88,67 +100,79 @@ enum StatusPublicacao {
 
 model Parecer {
   id              String           @id @default(cuid())
-  periodoRef      String           // "2025-03" (YYYY-MM)
+  organizationId  String?          @db.Uuid
+  organization    Organization?    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  periodoRef      String // "2025-03" (YYYY-MM)
   titulo          String
   texto           String?          @db.Text
-  arquivoUrl      String?          // URL do PDF no Cloudinary
-  arquivoNome     String?          // Nome original do arquivo
+  arquivoUrl      String? // URL do PDF no Cloudinary
+  arquivoNome     String? // Nome original do arquivo
   dataEmissao     DateTime         @db.Date
-  membrosConselho String?          // Nomes separados por ponto-e-vírgula
+  membrosConselho String? // Nomes separados por ponto-e-vírgula
   status          StatusPublicacao @default(RASCUNHO)
   createdAt       DateTime         @default(now())
   updatedAt       DateTime         @updatedAt
 
   @@index([periodoRef])
   @@index([status])
+  @@index([organizationId])
   @@map("pareceres")
 }
 
 // ─── Planilhas para download ──────────────────────────────────────────────────
 
 model PlanilhaDownload {
-  id          String   @id @default(cuid())
-  periodo     String   // "YYYY-MM"
-  arquivoUrl  String
-  arquivoNome String
-  createdAt   DateTime @default(now())
+  id             String        @id @default(cuid())
+  organizationId String?       @db.Uuid
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  periodo        String // "YYYY-MM"
+  arquivoUrl     String
+  arquivoNome    String
+  createdAt      DateTime      @default(now())
 
   @@index([periodo])
+  @@index([organizationId])
   @@map("planilhas_download")
 }
 
 // ─── Avisos e informativos ────────────────────────────────────────────────────
 
 model Aviso {
-  id        String           @id @default(cuid())
-  titulo    String
-  corpo     String           @db.Text
-  fixado    Boolean          @default(false)
-  status    StatusPublicacao @default(RASCUNHO)
-  createdAt DateTime         @default(now())
-  updatedAt DateTime         @updatedAt
+  id             String           @id @default(cuid())
+  organizationId String?          @db.Uuid
+  organization   Organization?    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  titulo         String
+  corpo          String           @db.Text
+  fixado         Boolean          @default(false)
+  status         StatusPublicacao @default(RASCUNHO)
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
   @@index([status])
+  @@index([organizationId])
   @@map("avisos")
 }
 
 // ─── Obras e melhorias (seção Gestão) ────────────────────────────────────────
 
 model Obra {
-  id           String      @id @default(cuid())
-  titulo       String
-  descricao    String?     @db.Text
-  orcamento    Decimal?    @db.Decimal(12, 2)
-  gasto        Decimal?    @db.Decimal(12, 2)
-  status       StatusObra  @default(PLANEJADO)
-  progresso    Int         @default(0)  // 0–100
-  dataInicio   DateTime?   @db.Date
-  dataPrevista DateTime?   @db.Date
-  imagemUrl    String?
-  publicado    Boolean     @default(false)
-  createdAt    DateTime    @default(now())
-  updatedAt    DateTime    @updatedAt
+  id             String        @id @default(cuid())
+  organizationId String?       @db.Uuid
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  titulo         String
+  descricao      String?       @db.Text
+  orcamento      Decimal?      @db.Decimal(12, 2)
+  gasto          Decimal?      @db.Decimal(12, 2)
+  status         StatusObra    @default(PLANEJADO)
+  progresso      Int           @default(0) // 0–100
+  dataInicio     DateTime?     @db.Date
+  dataPrevista   DateTime?     @db.Date
+  imagemUrl      String?
+  publicado      Boolean       @default(false)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
+  @@index([organizationId])
   @@map("obras")
 }
 
@@ -162,15 +186,18 @@ enum StatusObra {
 // ─── Propostas dos moradores ──────────────────────────────────────────────────
 
 model Proposta {
-  id        String         @id @default(cuid())
-  texto     String         @db.Text
-  nome      String?
-  unidade   String?
-  status    StatusProposta @default(PENDENTE)
-  resposta  String?        @db.Text
-  createdAt DateTime       @default(now())
-  updatedAt DateTime       @updatedAt
+  id             String         @id @default(cuid())
+  organizationId String?        @db.Uuid
+  organization   Organization?  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  texto          String         @db.Text
+  nome           String?
+  unidade        String?
+  status         StatusProposta @default(PENDENTE)
+  resposta       String?        @db.Text
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
 
+  @@index([organizationId])
   @@map("propostas")
 }
 
@@ -184,17 +211,20 @@ enum StatusProposta {
 // ─── Enquetes ─────────────────────────────────────────────────────────────────
 
 model Enquete {
-  id       String           @id @default(cuid())
-  pergunta String
-  tipo     TipoEnquete      @default(UNICA)
-  status   StatusPublicacao @default(RASCUNHO)
-  dataFim  DateTime?
-  opcoes   OpcaoEnquete[]
-  votos    VotoEnquete[]
-  createdAt DateTime        @default(now())
-  updatedAt DateTime        @updatedAt
+  id             String           @id @default(cuid())
+  organizationId String?          @db.Uuid
+  organization   Organization?    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  pergunta       String
+  tipo           TipoEnquete      @default(UNICA)
+  status         StatusPublicacao @default(RASCUNHO)
+  dataFim        DateTime?
+  opcoes         OpcaoEnquete[]
+  votos          VotoEnquete[]
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
 
   @@index([status])
+  @@index([organizationId])
   @@map("enquetes")
 }
 
@@ -204,55 +234,66 @@ enum TipoEnquete {
 }
 
 model OpcaoEnquete {
-  id        String        @id @default(cuid())
-  enqueteId String
-  enquete   Enquete       @relation(fields: [enqueteId], references: [id], onDelete: Cascade)
-  texto     String
-  ordem     Int           @default(0)
-  votos     VotoEnquete[]
+  id             String        @id @default(cuid())
+  organizationId String?       @db.Uuid
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  enqueteId      String
+  enquete        Enquete       @relation(fields: [enqueteId], references: [id], onDelete: Cascade)
+  texto          String
+  ordem          Int           @default(0)
+  votos          VotoEnquete[]
 
+  @@index([organizationId])
   @@map("opcoes_enquete")
 }
 
 model VotoEnquete {
-  id        String       @id @default(cuid())
-  enqueteId String
-  enquete   Enquete      @relation(fields: [enqueteId], references: [id], onDelete: Cascade)
-  opcaoId   String
-  opcao     OpcaoEnquete @relation(fields: [opcaoId], references: [id], onDelete: Cascade)
-  ip        String
-  createdAt DateTime     @default(now())
+  id             String        @id @default(cuid())
+  organizationId String?       @db.Uuid
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  enqueteId      String
+  enquete        Enquete       @relation(fields: [enqueteId], references: [id], onDelete: Cascade)
+  opcaoId        String
+  opcao          OpcaoEnquete  @relation(fields: [opcaoId], references: [id], onDelete: Cascade)
+  ip             String
+  createdAt      DateTime      @default(now())
 
   @@unique([enqueteId, opcaoId, ip])
+  @@index([organizationId])
   @@map("votos_enquete")
 }
 
 // ─── Membros da gestão (página Quem Somos) ────────────────────────────────────
 
 model Membro {
-  id        String   @id @default(cuid())
-  nome      String
-  cargo     String
-  descricao String?  @db.Text
-  fotoUrl   String?
-  ordem     Int      @default(0)
-  ativo     Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id             String        @id @default(cuid())
+  organizationId String?       @db.Uuid
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  nome           String
+  cargo          String
+  descricao      String?       @db.Text
+  fotoUrl        String?
+  ordem          Int           @default(0)
+  ativo          Boolean       @default(true)
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
 
+  @@index([organizationId])
   @@map("membros")
 }
 
 // ─── Configuração do portal ───────────────────────────────────────────────────
 
 model ConfigPortal {
-  id             String   @id @default(cuid())
-  nomeCondominio String   @default("Condomínio Residencial Santíssima Trindade")
+  id             String        @id @default(cuid())
+  organizationId String?       @unique @db.Uuid
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  nomeCondominio String        @default("")
   cnpj           String?
   endereco       String?
   logoUrl        String?
-  periodoAtivo   String   @default("") // Período padrão exibido nas páginas públicas
-  updatedAt      DateTime @updatedAt
+  periodoAtivo   String        @default("") // Período padrão exibido nas páginas públicas
+  updatedAt      DateTime      @updatedAt
 
   @@map("config_portal")
 }
@@ -282,7 +323,9 @@ enum DemandStatus {
 
 model Demand {
   id             String         @id @default(cuid())
-  protocol       String         @unique
+  organizationId String?        @db.Uuid
+  organization   Organization?  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  protocol       String
   accessCode     String
   requesterName  String
   unit           String
@@ -300,16 +343,20 @@ model Demand {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
 
-  updates        DemandUpdate[]
+  updates DemandUpdate[]
 
+  @@unique([organizationId, protocol])
   @@index([status])
   @@index([category])
   @@index([createdAt])
+  @@index([organizationId])
   @@map("demands")
 }
 
 model DemandUpdate {
   id             String        @id @default(cuid())
+  organizationId String?       @db.Uuid
+  organization   Organization? @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   demandId       String
   demand         Demand        @relation(fields: [demandId], references: [id], onDelete: Cascade)
   previousStatus DemandStatus?
@@ -320,6 +367,7 @@ model DemandUpdate {
   createdAt      DateTime      @default(now())
 
   @@index([demandId])
+  @@index([organizationId])
   @@map("demand_updates")
 }
 
@@ -339,29 +387,33 @@ enum ProcessoOrigem {
 
 model Processo {
   id                  String         @id @default(cuid())
-  numeroProcesso      String         @unique        // 20 dígitos sem formatação/separadores
+  organizationId      String?        @db.Uuid
+  organization        Organization?  @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  numeroProcesso      String // 20 dígitos sem formatação/separadores; único por organização
   tribunal            String         @default("TJCE")
-  classe              String?                        // classeProcessual.nome
-  assunto             String?                        // assuntos[0].nome
+  classe              String? // classeProcessual.nome
+  assunto             String? // assuntos[0].nome
   orgaoJulgador       String?
-  grau                String?                        // G1, G2, JE
+  grau                String? // G1, G2, JE
   dataAjuizamento     DateTime?      @db.Date
   status              ProcessoStatus @default(ATIVO)
-  ultimaMovimentacao  String?                        // movimentos[-1].nome
+  ultimaMovimentacao  String? // movimentos[-1].nome
   dataUltimaMovim     DateTime?
-  resumoPublico       String?        @db.Text        // editável pelo admin, visível no portal
-  observacoesInternas String?        @db.Text        // nunca público
+  resumoPublico       String?        @db.Text // editável pelo admin, visível no portal
+  observacoesInternas String?        @db.Text // nunca público
   origem              ProcessoOrigem @default(MANUAL)
   ultimaSincronizacao DateTime?
-  ativo               Boolean        @default(true)  // false = arquivado
+  ativo               Boolean        @default(true) // false = arquivado
   createdAt           DateTime       @default(now())
   updatedAt           DateTime       @updatedAt
 
   notificacoes Notificacao[]
   multas       Multa[]
 
+  @@unique([organizationId, numeroProcesso])
   @@index([status])
   @@index([ativo])
+  @@index([organizationId])
   @@map("processos")
 }
 
@@ -375,10 +427,12 @@ enum NotificacaoStatus {
 
 model Notificacao {
   id               String            @id @default(cuid())
+  organizationId   String?           @db.Uuid
+  organization     Organization?     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   processoId       String?
   processo         Processo?         @relation(fields: [processoId], references: [id])
-  bloco            String                            // A–I
-  unidade          String                            // 101–108 | 201–208 | 301–308 | 401–408
+  bloco            String // A–I
+  unidade          String // 101–108 | 201–208 | 301–308 | 401–408
   motivo           String
   descricaoInterna String?           @db.Text
   status           NotificacaoStatus @default(EMITIDA)
@@ -395,6 +449,7 @@ model Notificacao {
 
   @@index([status])
   @@index([bloco, unidade])
+  @@index([organizationId])
   @@map("notificacoes")
 }
 
@@ -409,28 +464,31 @@ enum MultaStatus {
 }
 
 model Multa {
-  id               String      @id @default(cuid())
+  id               String        @id @default(cuid())
+  organizationId   String?       @db.Uuid
+  organization     Organization? @relation(fields: [organizationId], references: [id], onDelete: Restrict)
   processoId       String?
-  processo         Processo?   @relation(fields: [processoId], references: [id])
+  processo         Processo?     @relation(fields: [processoId], references: [id])
   bloco            String
   unidade          String
   motivo           String
-  descricaoInterna String?     @db.Text
-  valor            Decimal     @db.Decimal(12, 2)
-  status           MultaStatus @default(APLICADA)
-  dataAplicacao    DateTime    @db.Date
-  dataVencimento   DateTime?   @db.Date
-  dataPagamento    DateTime?   @db.Date
+  descricaoInterna String?       @db.Text
+  valor            Decimal       @db.Decimal(12, 2)
+  status           MultaStatus   @default(APLICADA)
+  dataAplicacao    DateTime      @db.Date
+  dataVencimento   DateTime?     @db.Date
+  dataPagamento    DateTime?     @db.Date
   anexoUrl         String?
   anexoNome        String?
   criadoPorId      String?
-  criadoPor        User?       @relation("MultaCriador", fields: [criadoPorId], references: [id], onDelete: SetNull)
-  ativo            Boolean     @default(true)
-  createdAt        DateTime    @default(now())
-  updatedAt        DateTime    @updatedAt
+  criadoPor        User?         @relation("MultaCriador", fields: [criadoPorId], references: [id], onDelete: SetNull)
+  ativo            Boolean       @default(true)
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
 
   @@index([status])
   @@index([bloco, unidade])
+  @@index([organizationId])
   @@map("multas")
 }
 
@@ -442,18 +500,72 @@ enum JuridicoEntidade {
 }
 
 model JuridicoAuditoria {
-  id            String           @id @default(cuid())
-  entidade      JuridicoEntidade
-  entidadeId    String
-  acao          String           // CRIACAO | EDICAO | MUDANCA_STATUS | SINCRONIZACAO | ARQUIVAMENTO | CANCELAMENTO | PAGAMENTO
-  valorAnterior Json?
-  valorNovo     Json?
-  usuarioId     String?
-  usuario       User?            @relation("JuridicoAuditor", fields: [usuarioId], references: [id], onDelete: SetNull)
-  observacao    String?          @db.Text
-  createdAt     DateTime         @default(now())
+  id             String           @id @default(cuid())
+  organizationId String?          @db.Uuid
+  organization   Organization?    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  entidade       JuridicoEntidade
+  entidadeId     String
+  acao           String // CRIACAO | EDICAO | MUDANCA_STATUS | SINCRONIZACAO | ARQUIVAMENTO | CANCELAMENTO | PAGAMENTO
+  valorAnterior  Json?
+  valorNovo      Json?
+  usuarioId      String?
+  usuario        User?            @relation("JuridicoAuditor", fields: [usuarioId], references: [id], onDelete: SetNull)
+  observacao     String?          @db.Text
+  createdAt      DateTime         @default(now())
 
   @@index([entidade, entidadeId])
   @@index([createdAt])
+  @@index([organizationId])
   @@map("juridico_auditoria")
+}
+
+// ─── Organizações (condomínios) ───────────────────────────────────────────────
+
+enum OrganizationStatus {
+  ACTIVE
+  DISABLED
+}
+
+/// Condomínio cliente do Orken COND. O slug é o mesmo da Orken Platform e é o
+/// caminho do portal (`/{slug}`). Desativada responde como inexistente.
+model Organization {
+  id                     String             @id @default(uuid()) @db.Uuid
+  slug                   String             @unique
+  name                   String
+  shortName              String
+  status                 OrganizationStatus @default(ACTIVE)
+  /// Organização na Orken Platform (entrada da equipe pelo Orken ID).
+  platformOrganizationId String?            @unique @db.Uuid
+  /// Prefixo dos protocolos da Central de Demandas ("RST" → RST-2026-K7M9Q2).
+  protocolPrefix         String             @unique
+  /// Tribunal do DataJud para a sincronização de processos.
+  datajudTribunal        String             @default("TJCE")
+  /// Cor complementar da identidade do condomínio no portal (hex).
+  accentColor            String?
+  /// Blocos e unidades (lib/units.ts). Sem planta, multas e notificações só conferem o formato.
+  unitLayout             Json?
+  createdAt              DateTime           @default(now())
+  updatedAt              DateTime           @updatedAt
+
+  users              User[]
+  categorias         Categoria[]
+  lancamentos        Lancamento[]
+  pareceres          Parecer[]
+  planilhasDownload  PlanilhaDownload[]
+  avisos             Aviso[]
+  obras              Obra[]
+  propostas          Proposta[]
+  enquetes           Enquete[]
+  opcoesEnquete      OpcaoEnquete[]
+  votosEnquete       VotoEnquete[]
+  membros            Membro[]
+  demands            Demand[]
+  demandUpdates      DemandUpdate[]
+  processos          Processo[]
+  notificacoes       Notificacao[]
+  multas             Multa[]
+  juridicoAuditorias JuridicoAuditoria[]
+  configPortal       ConfigPortal?
+
+  @@map("organizations")
 }

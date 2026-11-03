@@ -1,8 +1,10 @@
 "use client";
 
+
+import { orgFetch } from "@/lib/org-navigation";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
+import { useOrgRouter as useRouter } from "@/lib/org-navigation";
+import Link from "@/lib/org-navigation";
 import { Eye, EyeOff } from "lucide-react";
 
 interface RoleOption {
@@ -34,7 +36,7 @@ export default function NovoUsuarioForm({ rolesCriáveis }: Props) {
     };
 
     try {
-      const res = await fetch("/api/usuarios", {
+      const res = await orgFetch("/api/usuarios", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),

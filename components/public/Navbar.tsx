@@ -1,11 +1,12 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import Link from "@/lib/org-navigation";
+import { useOrgPathname as usePathname } from "@/lib/org-navigation";
 import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import { LogIn, Menu, X, Shield } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import { useOrganization } from "@/components/org/OrganizationProvider";
 
 const links = [
   { href: "/financeiro",  label: "Receitas e Despesas" },
@@ -19,6 +20,7 @@ const links = [
 ];
 
 export default function Navbar() {
+  const organization = useOrganization();
   const pathname = usePathname();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -64,7 +66,7 @@ export default function Navbar() {
             <Link
               href="/"
               className="flex items-center gap-2.5 group"
-              aria-label="Início — Transparência RST"
+              aria-label={`Início — ${organization.shortName}`}
               style={{ minHeight: "auto" }}
             >
               <div className="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center flex-shrink-0 group-hover:bg-white/20 transition-colors duration-150">
@@ -72,10 +74,10 @@ export default function Navbar() {
               </div>
               <div>
                 <div className="font-semibold text-white text-[0.9375rem] leading-tight tracking-[-0.01em]">
-                  Transparência RST
+                  {organization.shortName}
                 </div>
                 <div className="text-white/60 text-[0.6875rem] leading-tight hidden sm:block">
-                  Condomínio Residencial Santíssima Trindade
+                  {organization.name}
                 </div>
               </div>
             </Link>
@@ -176,7 +178,7 @@ export default function Navbar() {
           <div className="flex items-center gap-2">
             <Shield className="w-4 h-4 text-primary flex-shrink-0" aria-hidden="true" />
             <span className="font-semibold text-sm text-foreground tracking-[-0.01em]">
-              Transparência RST
+              {organization.shortName}
             </span>
           </div>
           <button

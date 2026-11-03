@@ -1,7 +1,9 @@
 "use client";
 
+
+import { orgFetch } from "@/lib/org-navigation";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useOrgRouter as useRouter } from "@/lib/org-navigation";
 import { CheckCircle2, Loader2 } from "lucide-react";
 
 type DemandStatus =
@@ -38,7 +40,7 @@ export default function DemandaAtualizarForm({
     setLoading(true);
 
     try {
-      const res = await fetch(`/api/demandas/${demandId}`, {
+      const res = await orgFetch(`/api/demandas/${demandId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ newStatus, message }),

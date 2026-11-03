@@ -1,7 +1,9 @@
 "use client";
 
+
+import { orgFetch } from "@/lib/org-navigation";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useOrgRouter as useRouter } from "@/lib/org-navigation";
 import { Trash2 } from "lucide-react";
 
 interface DeletePlanilhaButtonProps {
@@ -18,7 +20,7 @@ export default function DeletePlanilhaButton({ id, nome }: DeletePlanilhaButtonP
 
     setExcluindo(true);
     try {
-      const res = await fetch(`/api/planilhas/${id}`, { method: "DELETE" });
+      const res = await orgFetch(`/api/planilhas/${id}`, { method: "DELETE" });
       if (!res.ok) {
         const data = await res.json();
         alert(data.error ?? "Erro ao excluir planilha.");

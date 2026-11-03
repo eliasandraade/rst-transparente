@@ -71,15 +71,25 @@ jobs:
         run: npx prisma migrate diff --from-migrations prisma/migrations --to-schema-datamodel prisma/schema.prisma --shadow-database-url "$SHADOW_DATABASE_URL" --exit-code
       - name: Migrations num banco limpo
         run: npx prisma migrate deploy
-      - name: Baseline de um banco criado por db push (como o de produção)
+      - name: Instalação existente (0_init com dados) recebe as organizações sem perda
         env:
-          PUSHED: postgresql://cond@localhost:5432/cond_pushed
+          LEGACY: postgresql://cond@localhost:5432/cond_legacy
         run: |
-          psql -h localhost -U cond -d cond_test -c "CREATE DATABASE cond_pushed"
-          DATABASE_URL="$PUSHED" npx prisma db push --skip-generate
-          DATABASE_URL="$PUSHED" node scripts/db-migrate.mjs
-          DATABASE_URL="$PUSHED" node scripts/db-migrate.mjs
-          test "$(psql -h localhost -U cond -d cond_pushed -Atc "select count(*) from _prisma_migrations where migration_name='0_init' and finished_at is not null")" = "1"
+          psql -h localhost -U cond -d cond_test -c "CREATE DATABASE cond_legacy"
+          psql -v ON_ERROR_STOP=1 -h localhost -U cond -d cond_legacy -f prisma/migrations/0_init/migration.sql
+          psql -v ON_ERROR_STOP=1 -h localhost -U cond -d cond_legacy -f tests/fixtures/legacy-install.sql
+          DATABASE_URL="$LEGACY" npx prisma migrate resolve --applied 0_init
+          DATABASE_URL="$LEGACY" node scripts/db-migrate.mjs
+          q() { psql -h localhost -U cond -d cond_legacy -Atc "$1"; }
+          test "$(q "select slug || '|' || \"protocolPrefix\" from organizations")" = "santissima-trindade|RST"
+          for t in users config_portal categorias lancamentos demands demand_updates enquetes opcoes_enquete votos_enquete processos; do
+            test "$(q "select count(*) from $t where \"organizationId\" is distinct from '8f282e77-cb75-4d75-99fd-9ac01057227c'")" = "0" || { echo "$t sem organização"; exit 1; }
+          done
+          test "$(q "select valor from lancamentos where id = 'legacy-l1'")" = "1234.56"
+          test "$(q "select protocol from demands where id = 'legacy-d1'")" = "RST-2026-K7M9Q2"
+          test "$(q "select count(*) from pg_class where relrowsecurity and relforcerowsecurity and relnamespace = 'public'::regnamespace")" = "19"
+      - name: Banco novo nasce sem organização
+        run: test "$(psql -h localhost -U cond -d cond_test -Atc "select count(*) from organizations")" = "0"
       - name: Banco com divergência é recusado sem nada marcado
         env:
           DRIFTED: postgresql://cond@localhost:5432/cond_drifted
@@ -89,14 +99,36 @@ jobs:
           psql -h localhost -U cond -d cond_drifted -c 'ALTER TABLE users ADD COLUMN "fora_do_schema" text'
           if DATABASE_URL="$DRIFTED" node scripts/db-migrate.mjs; then echo "deveria ter recusado"; exit 1; fi
           test "$(psql -h localhost -U cond -d cond_drifted -Atc "select to_regclass('public._prisma_migrations') is null")" = "t"
-      - run: npm run test:integration
+      - name: Integração (dono das tabelas)
+        run: npm run test:integration
+      - name: Papel de runtime sem BYPASSRLS
+        run: psql -v ON_ERROR_STOP=1 -h localhost -U cond -d cond_test -f scripts/db-runtime-role.sql
+      - name: Integração com RLS valendo (rotas pelo papel cond_app)
+        env:
+          DATABASE_URL: postgresql://cond_app@localhost:5432/cond_test
+          ADMIN_DATABASE_URL: postgresql://cond@localhost:5432/cond_test
+        run: npm run test:integration
       - run: npm run build
-      - name: Servidor de produção de pé (middleware Edge, login, saúde)
+      - name: Servidor de produção de pé (middleware Edge, rotas por condomínio, saúde)
+        env:
+          LEGACY_HOST_ORGANIZATION: legado.test=condominio-smoke
         run: |
+          psql -h localhost -U cond -d cond_test -c "INSERT INTO organizations (id, slug, name, \"shortName\", \"protocolPrefix\", \"updatedAt\") VALUES (gen_random_uuid(), 'condominio-smoke', 'Condomínio Smoke', 'Smoke', 'SMK', now())"
           npm run start -- -p 3100 > /tmp/next.log 2>&1 &
           for i in $(seq 1 30); do curl -sf http://localhost:3100/api/health >/dev/null && break; sleep 1; done
-          check() { code=$(curl -s -o /dev/null -w "%{http_code}" "http://localhost:3100$1"); echo "$1 -> $code (esperado $2)"; [ "$code" = "$2" ] || { tail -50 /tmp/next.log; exit 1; }; }
+          check() { code=$(curl -s -o /dev/null -w "%{http_code}" "${@:3}" "http://localhost:3100$1"); echo "$1 -> $code (esperado $2)"; [ "$code" = "$2" ] || { tail -50 /tmp/next.log; exit 1; }; }
+          location() { curl -s -o /dev/null -w "%{redirect_url}" "${@:2}" "http://localhost:3100$1"; }
           check /api/health 200
-          check /admin/login 200
-          check /admin/dashboard 307
+          check / 200
+          check /condominio-smoke 200
+          check /condominio-smoke/financeiro 200
+          check /condominio-smoke/admin/login 200
+          check /condominio-smoke/admin/dashboard 307
+          case "$(location /condominio-smoke/admin/dashboard)" in */condominio-smoke/admin/login\?callbackUrl=%2Fadmin%2Fdashboard) ;; *) echo "login fora do condomínio"; exit 1;; esac
+          check /condominio-inexistente 404
+          check /condominio-inexistente/admin/login 404
+          check /admin/login 404
+          check /financeiro 308 -H "Host: legado.test"
+          case "$(location /demandas/acompanhar/SMK-2026-AAAAAA -H "Host: legado.test")" in */condominio-smoke/demandas/acompanhar/SMK-2026-AAAAAA) ;; *) echo "redirecionamento legado errado"; exit 1;; esac
+          check /financeiro 404
           if grep -E "TypeError|Error:" /tmp/next.log; then echo "erro no log do servidor"; exit 1; fi

@@ -1,0 +1,139 @@
+import { NextResponse } from "next/server";
+import { staffSession, can, forbidden } from "@/lib/staff";
+import { requireTenant, tenantDb } from "@/lib/tenant";
+import { z } from "zod";
+import {
+  normalizarNumeroProcesso,
+  buscarProcessoDataJud,
+  registrarAuditoria,
+} from "@/lib/juridico";
+import type { ProcessoStatus } from "@prisma/client";
+
+const VALID_STATUS = ["ATIVO", "SUSPENSO", "ENCERRADO", "ARQUIVADO"] as const;
+
+const CreateProcessoSchema = z.object({
+  numeroProcesso: z.string().min(15, "Número de processo inválido").max(30),
+  resumoPublico: z.string().max(1000).optional().nullable(),
+  observacoesInternas: z.string().max(2000).optional().nullable(),
+});
+
+export async function POST(request: Request) {
+  const { org, db } = await requireTenant();
+  const session = await staffSession();
+  if (!session) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+  if (!can(session, "juridico.editar")) return forbidden();
+
+  try {
+    const body = await request.json();
+    const data = CreateProcessoSchema.parse(body);
+    const numeroNormalizado = normalizarNumeroProcesso(data.numeroProcesso);
+
+    const existente = await db.processo.findFirst({
+      where: { numeroProcesso: numeroNormalizado },
+      select: { id: true },
+    });
+    if (existente) {
+      return NextResponse.json(
+        { error: "Processo já cadastrado com este número." },
+        { status: 409 }
+      );
+    }
+
+    // Busca dados no DataJud imediatamente
+    let dadosDataJud = null;
+    let erroSync: string | null = null;
+    try {
+      dadosDataJud = await buscarProcessoDataJud(numeroNormalizado, org.datajudTribunal);
+    } catch (err) {
+      erroSync = err instanceof Error ? err.message : "Erro na API DataJud";
+    }
+
+    const toDate = (s?: string) => { if (!s) return null; const d = new Date(s); return isNaN(d.getTime()) ? null : d; };
+
+    const processo = await db.processo.create({
+      data: {
+        numeroProcesso: numeroNormalizado,
+        tribunal: org.datajudTribunal,
+        classe: dadosDataJud?.classe ?? null,
+        assunto: dadosDataJud?.assunto ?? null,
+        orgaoJulgador: dadosDataJud?.orgaoJulgador ?? null,
+        grau: dadosDataJud?.grau ?? null,
+        dataAjuizamento: toDate(dadosDataJud?.dataAjuizamento),
+        ultimaMovimentacao: dadosDataJud?.ultimaMovimentacao ?? null,
+        dataUltimaMovim: toDate(dadosDataJud?.dataUltimaMovim),
+        resumoPublico: data.resumoPublico ?? null,
+        observacoesInternas: data.observacoesInternas ?? null,
+        origem: dadosDataJud ? "DATAJUD" : "MANUAL",
+        ultimaSincronizacao: dadosDataJud ? new Date() : null,
+      },
+    });
+
+    await registrarAuditoria({
+      entidade: "PROCESSO",
+      entidadeId: processo.id,
+      acao: "CRIACAO",
+      valorAnterior: null,
+      valorNovo: {
+        numeroProcesso: processo.numeroProcesso,
+        origem: processo.origem,
+        sincronizadoDataJud: !!dadosDataJud,
+      },
+      usuarioId: (session.user as { id?: string })?.id ?? null,
+      observacao: erroSync
+        ? `Cadastrado manualmente. Sync DataJud falhou: ${erroSync}`
+        : undefined,
+    });
+
+    return NextResponse.json(
+      { ...processo, avisoSync: erroSync },
+      { status: 201 }
+    );
+  } catch (err) {
+    if (err instanceof z.ZodError) {
+      return NextResponse.json({ error: err.issues[0].message }, { status: 400 });
+    }
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error("[POST /api/juridico/processos]", err);
+    return NextResponse.json({ error: `Erro ao cadastrar processo: ${msg}` }, { status: 500 });
+  }
+}
+
+export async function GET(request: Request) {
+  const db = await tenantDb();
+  const session = await staffSession();
+  if (!session) return NextResponse.json({ error: "Não autorizado" }, { status: 401 });
+  if (!can(session, "juridico.editar")) return forbidden();
+
+  const { searchParams } = new URL(request.url);
+  const rawStatus = searchParams.get("status");
+  const search = searchParams.get("search") ?? undefined;
+
+  const status =
+    rawStatus && VALID_STATUS.includes(rawStatus as ProcessoStatus)
+      ? (rawStatus as ProcessoStatus)
+      : undefined;
+
+  try {
+    const processos = await db.processo.findMany({
+      where: {
+        ativo: true,
+        ...(status ? { status } : {}),
+        ...(search
+          ? {
+              OR: [
+                { numeroProcesso: { contains: search, mode: "insensitive" } },
+                { classe: { contains: search, mode: "insensitive" } },
+                { assunto: { contains: search, mode: "insensitive" } },
+              ],
+            }
+          : {}),
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    return NextResponse.json(processos);
+  } catch (err) {
+    console.error("[GET /api/juridico/processos]", err);
+    return NextResponse.json({ error: "Erro ao buscar processos." }, { status: 500 });
+  }
+}

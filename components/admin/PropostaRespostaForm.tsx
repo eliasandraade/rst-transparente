@@ -1,7 +1,9 @@
 "use client";
 
+
+import { orgFetch } from "@/lib/org-navigation";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useOrgRouter as useRouter } from "@/lib/org-navigation";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 
 type StatusProposta = "PENDENTE" | "ANALISANDO" | "RESPONDIDA" | "ARQUIVADA";
@@ -27,7 +29,7 @@ export default function PropostaRespostaForm({ id, statusAtual, respostaAtual }:
     setCarregando(true);
 
     try {
-      const res = await fetch(`/api/propostas/${id}`, {
+      const res = await orgFetch(`/api/propostas/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ status, resposta: resposta.trim() || null }),

@@ -1,7 +1,9 @@
 "use client";
 
+
+import { orgFetch } from "@/lib/org-navigation";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useOrgRouter as useRouter } from "@/lib/org-navigation";
 import { UserCircle, Pencil, Trash2, Loader2, Check, X } from "lucide-react";
 
 interface Membro {
@@ -33,7 +35,7 @@ function MembroRow({ membro }: { membro: Membro }) {
 
   async function salvar() {
     setSalvando(true);
-    await fetch(`/api/membros/${membro.id}`, {
+    await orgFetch(`/api/membros/${membro.id}`, {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -63,7 +65,7 @@ function MembroRow({ membro }: { membro: Membro }) {
   async function excluir() {
     if (!confirm(`Remover "${membro.nome}" da lista?`)) return;
     setExcluindo(true);
-    await fetch(`/api/membros/${membro.id}`, { method: "DELETE" });
+    await orgFetch(`/api/membros/${membro.id}`, { method: "DELETE" });
     router.refresh();
   }
 

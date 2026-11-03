@@ -1,7 +1,9 @@
 "use client";
 
+
+import { orgFetch } from "@/lib/org-navigation";
 import { useState, useRef } from "react";
-import Link from "next/link";
+import Link from "@/lib/org-navigation";
 import { Upload, FileSpreadsheet, CheckCircle2, AlertCircle, Info } from "lucide-react";
 import { formatarMoeda, formatarPeriodo } from "@/lib/utils";
 
@@ -86,7 +88,7 @@ export default function ImportarWizard({ categorias }: Props) {
     form.append("arquivo", arquivo);
 
     try {
-      const res = await fetch("/api/importar", { method: "POST", body: form });
+      const res = await orgFetch("/api/importar", { method: "POST", body: form });
       const json = await res.json();
       if (!res.ok) { setErro(json.error ?? "Erro ao processar arquivo."); return; }
       const abasList: AbaParsed[] = json;
@@ -145,7 +147,7 @@ export default function ImportarWizard({ categorias }: Props) {
     setErro("");
     setCarregando(true);
     try {
-      const res = await fetch("/api/importar/confirmar", {
+      const res = await orgFetch("/api/importar/confirmar", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

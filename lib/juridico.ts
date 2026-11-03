@@ -1,29 +1,13 @@
-import { prisma } from "@/lib/prisma";
+import { requireTenant } from "@/lib/tenant";
 import type { JuridicoEntidade, ProcessoStatus } from "@prisma/client";
 
 // ─── Constantes ───────────────────────────────────────────────────────────────
 
-export const DATAJUD_ENDPOINT =
-  "https://api-publica.datajud.cnj.jus.br/api_publica_tjce/_search";
-
-export const BLOCOS_VALIDOS = ["A", "B", "C", "D", "E", "F", "G", "H", "I"] as const;
-export type BlocoValido = (typeof BLOCOS_VALIDOS)[number];
-
-// Unidades válidas por pavimento: 101-108, 201-208, 301-308, 401-408
-const UNIDADES_VALIDAS = new Set<string>(
-  [1, 2, 3, 4].flatMap((pav) =>
-    [1, 2, 3, 4, 5, 6, 7, 8].map((u) => `${pav}0${u}`)
-  )
-);
-
-// ─── Validação ────────────────────────────────────────────────────────────────
-
-export function validarBloco(bloco: string): boolean {
-  return BLOCOS_VALIDOS.includes(bloco.toUpperCase() as BlocoValido);
-}
-
-export function validarUnidade(unidade: string): boolean {
-  return UNIDADES_VALIDAS.has(unidade);
+/** API pública do DataJud por tribunal (sigla da organização: TJCE, TJSP...). */
+export function datajudEndpoint(tribunal: string): string {
+  // A sigla vira caminho de URL: só letras e dígitos, nunca outro host ou caminho.
+  if (!/^[A-Z0-9]{2,10}$/.test(tribunal)) throw new Error("Tribunal do DataJud inválido");
+  return `https://api-publica.datajud.cnj.jus.br/api_publica_${tribunal.toLowerCase()}/_search`;
 }
 
 // ─── Mascaramento ─────────────────────────────────────────────────────────────
@@ -95,14 +79,15 @@ interface DataJudResponse {
 }
 
 export async function buscarProcessoDataJud(
-  numeroProcesso: string
+  numeroProcesso: string,
+  tribunal: string
 ): Promise<DataJudProcesso | null> {
   const apiKey = process.env.DATAJUD_API_KEY;
   if (!apiKey) throw new Error("DATAJUD_API_KEY não configurada");
 
   const raw = normalizarNumeroProcesso(numeroProcesso);
 
-  const res = await fetch(DATAJUD_ENDPOINT, {
+  const res = await fetch(datajudEndpoint(tribunal), {
     method: "POST",
     headers: {
       Authorization: `APIKey ${apiKey}`,
@@ -151,7 +136,8 @@ export async function syncProcesso(
   processoId: string,
   usuarioId: string | null
 ): Promise<SyncResult> {
-  const processo = await prisma.processo.findUnique({
+  const { org, db } = await requireTenant();
+  const processo = await db.processo.findUnique({
     where: { id: processoId },
   });
 
@@ -160,7 +146,7 @@ export async function syncProcesso(
   }
 
   try {
-    const dados = await buscarProcessoDataJud(processo.numeroProcesso);
+    const dados = await buscarProcessoDataJud(processo.numeroProcesso, org.datajudTribunal);
 
     if (!dados) {
       await registrarAuditoria({
@@ -192,7 +178,7 @@ export async function syncProcesso(
 
     const toDate = (s?: string) => { if (!s) return null; const d = new Date(s); return isNaN(d.getTime()) ? null : d; };
 
-    await prisma.processo.update({
+    await db.processo.update({
       where: { id: processoId },
       data: {
         classe: dados.classe ?? processo.classe,
@@ -214,7 +200,7 @@ export async function syncProcesso(
       valorAnterior: anterior,
       valorNovo: dados,
       usuarioId,
-      observacao: "Sincronização manual via DataJud/TJCE",
+      observacao: `Sincronização manual via DataJud/${org.datajudTribunal}`,
     });
 
     return { id: processoId, numeroProcesso: processo.numeroProcesso, sucesso: true };
@@ -246,7 +232,8 @@ export async function syncTodosProcessos(usuarioId: string | null): Promise<{
   erros: number;
   resultados: SyncResult[];
 }> {
-  const processos = await prisma.processo.findMany({
+  const { db } = await requireTenant();
+  const processos = await db.processo.findMany({
     where: { ativo: true, status: { in: ["ATIVO", "SUSPENSO"] as ProcessoStatus[] } },
     select: { id: true },
   });
@@ -281,7 +268,8 @@ interface AuditoriaInput {
 }
 
 export async function registrarAuditoria(input: AuditoriaInput): Promise<void> {
-  await prisma.juridicoAuditoria.create({
+  const { db } = await requireTenant();
+  await db.juridicoAuditoria.create({
     data: {
       entidade: input.entidade,
       entidadeId: input.entidadeId,

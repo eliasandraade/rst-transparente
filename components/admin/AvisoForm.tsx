@@ -1,7 +1,9 @@
 "use client";
 
+
+import { orgFetch } from "@/lib/org-navigation";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useOrgRouter as useRouter } from "@/lib/org-navigation";
 import { Loader2, AlertCircle, CheckCircle2 } from "lucide-react";
 
 interface AvisoFormProps {
@@ -40,7 +42,7 @@ export default function AvisoForm({ initialData }: AvisoFormProps) {
       const url = isEdicao ? `/api/avisos/${initialData.id}` : "/api/avisos";
       const method = isEdicao ? "PATCH" : "POST";
 
-      const res = await fetch(url, {
+      const res = await orgFetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -66,7 +68,7 @@ export default function AvisoForm({ initialData }: AvisoFormProps) {
 
     setCarregando(true);
     try {
-      await fetch(`/api/avisos/${initialData.id}`, { method: "DELETE" });
+      await orgFetch(`/api/avisos/${initialData.id}`, { method: "DELETE" });
       router.push("/admin/avisos");
       router.refresh();
     } finally {

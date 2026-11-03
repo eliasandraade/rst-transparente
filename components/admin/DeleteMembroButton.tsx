@@ -1,7 +1,9 @@
 "use client";
 
+
+import { orgFetch } from "@/lib/org-navigation";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useOrgRouter as useRouter } from "@/lib/org-navigation";
 import { Trash2, Loader2 } from "lucide-react";
 
 interface Props {
@@ -16,7 +18,7 @@ export default function DeleteMembroButton({ id, nome }: Props) {
   async function handleDelete() {
     if (!confirm(`Remover "${nome}" da lista?`)) return;
     setLoading(true);
-    await fetch(`/api/membros/${id}`, { method: "DELETE" });
+    await orgFetch(`/api/membros/${id}`, { method: "DELETE" });
     router.refresh();
     setLoading(false);
   }

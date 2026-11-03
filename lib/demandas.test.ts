@@ -5,7 +5,7 @@ describe("protocolo e código de acesso", () => {
   it("protocolo não sequencial, sem caracteres ambíguos", () => {
     const seen = new Set<string>();
     for (let i = 0; i < 200; i++) {
-      const protocol = generateProtocol(2026);
+      const protocol = generateProtocol("RST", 2026);
       expect(protocol).toMatch(/^RST-2026-[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$/);
       seen.add(protocol);
     }

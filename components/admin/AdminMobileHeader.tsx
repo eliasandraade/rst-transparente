@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import Link from "@/lib/org-navigation";
+import { useOrgPathname as usePathname, prefixOrgPath, useOrgSlug } from "@/lib/org-navigation";
 import { signOut } from "next-auth/react";
 import { useState } from "react";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,7 @@ import {
   UserCircle, UsersRound, ClipboardList, Scale, ExternalLink,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import { useOrganization } from "@/components/org/OrganizationProvider";
 
 const links = [
   { href: "/admin/dashboard", icone: LayoutDashboard, label: "Painel" },
@@ -34,7 +35,9 @@ interface Props {
 }
 
 export default function AdminMobileHeader({ userName, userRole }: Props) {
+  const organization = useOrganization();
   const pathname = usePathname();
+  const orgSlug = useOrgSlug();
   const [aberto, setAberto] = useState(false);
 
   function navClass(active: boolean) {
@@ -58,7 +61,7 @@ export default function AdminMobileHeader({ userName, userRole }: Props) {
           >
             <Menu className="w-5 h-5" />
           </button>
-          <span className="font-semibold text-sm text-foreground">Admin RST</span>
+          <span className="font-semibold text-sm text-foreground">{organization.shortName}</span>
         </div>
         <div className="flex items-center gap-1">
           <ThemeToggle
@@ -96,7 +99,7 @@ export default function AdminMobileHeader({ userName, userRole }: Props) {
               <Building2 className="w-4 h-4 text-white" aria-hidden="true" />
             </div>
             <div>
-              <div className="font-bold text-sm leading-tight tracking-tight">Transparência RST</div>
+              <div className="font-bold text-sm leading-tight tracking-tight">{organization.shortName}</div>
               <div className="text-xs text-[var(--foreground-subtle)] leading-tight">Administração</div>
             </div>
           </div>
@@ -180,7 +183,7 @@ export default function AdminMobileHeader({ userName, userRole }: Props) {
             Portal público
           </Link>
           <button
-            onClick={() => signOut({ callbackUrl: "/admin/login" })}
+            onClick={() => signOut({ callbackUrl: prefixOrgPath(orgSlug, "/admin/login") })}
             style={{ minHeight: "auto" }}
             className="flex items-center gap-3 px-3 py-2.5 rounded-md text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--danger)] hover:bg-[var(--danger-subtle)] w-full transition-colors duration-150"
           >

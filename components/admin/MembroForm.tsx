@@ -1,7 +1,9 @@
 "use client";
 
+
+import { orgFetch } from "@/lib/org-navigation";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useOrgRouter as useRouter } from "@/lib/org-navigation";
 import { Loader2, UserPlus } from "lucide-react";
 
 export default function MembroForm() {
@@ -20,7 +22,7 @@ export default function MembroForm() {
     setSalvando(true);
 
     try {
-      const res = await fetch("/api/membros", {
+      const res = await orgFetch("/api/membros", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

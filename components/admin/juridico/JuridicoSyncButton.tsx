@@ -1,8 +1,10 @@
 "use client";
 
+
+import { orgFetch } from "@/lib/org-navigation";
 import { useState } from "react";
 import { RefreshCw, CheckCircle2, AlertTriangle } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { useOrgRouter as useRouter } from "@/lib/org-navigation";
 
 export default function JuridicoSyncButton() {
   const [estado, setEstado] = useState<"idle" | "loading" | "sucesso" | "erro">("idle");
@@ -14,7 +16,7 @@ export default function JuridicoSyncButton() {
     setMsg(null);
 
     try {
-      const res = await fetch("/api/juridico/sync", { method: "POST" });
+      const res = await orgFetch("/api/juridico/sync", { method: "POST" });
       const json = await res.json();
 
       if (!res.ok) {

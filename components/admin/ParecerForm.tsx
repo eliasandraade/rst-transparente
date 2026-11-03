@@ -1,7 +1,9 @@
 "use client";
 
+
+import { orgFetch } from "@/lib/org-navigation";
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useOrgRouter as useRouter } from "@/lib/org-navigation";
 import { Loader2, AlertCircle, CheckCircle2, Upload, X, FileText } from "lucide-react";
 
 interface ParecerFormProps {
@@ -41,7 +43,7 @@ export default function ParecerForm({ initialData }: ParecerFormProps) {
     const formData = new FormData();
     formData.append("arquivo", file);
 
-    const res = await fetch("/api/upload", { method: "POST", body: formData });
+    const res = await orgFetch("/api/upload", { method: "POST", body: formData });
     if (!res.ok) throw new Error("Erro ao fazer upload do arquivo");
 
     const data = await res.json();
@@ -78,7 +80,7 @@ export default function ParecerForm({ initialData }: ParecerFormProps) {
       const url = isEdicao ? `/api/pareceres/${initialData.id}` : "/api/pareceres";
       const method = isEdicao ? "PUT" : "POST";
 
-      const res = await fetch(url, {
+      const res = await orgFetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),
@@ -103,7 +105,7 @@ export default function ParecerForm({ initialData }: ParecerFormProps) {
     if (!confirm("Tem certeza que deseja excluir este parecer?")) return;
     setCarregando(true);
     try {
-      await fetch(`/api/pareceres/${initialData.id}`, { method: "DELETE" });
+      await orgFetch(`/api/pareceres/${initialData.id}`, { method: "DELETE" });
       router.push("/admin/pareceres");
       router.refresh();
     } finally {

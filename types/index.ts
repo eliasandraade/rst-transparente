@@ -64,6 +64,9 @@ declare module "next-auth" {
       email: string;
       name: string;
       role: string;
+      /** Organização em que a sessão foi aberta (só vale nela; lib/staff.ts). */
+      organizationId: string;
+      organizationSlug: string;
     };
   }
 }

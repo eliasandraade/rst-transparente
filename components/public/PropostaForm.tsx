@@ -1,5 +1,7 @@
 "use client";
 
+
+import { orgFetch } from "@/lib/org-navigation";
 import { useState } from "react";
 import { Loader2, AlertCircle, CheckCircle2, Send } from "lucide-react";
 
@@ -23,7 +25,7 @@ export default function PropostaForm() {
         throw new Error("A proposta deve ter no mínimo 10 caracteres.");
       }
 
-      const res = await fetch("/api/propostas", {
+      const res = await orgFetch("/api/propostas", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

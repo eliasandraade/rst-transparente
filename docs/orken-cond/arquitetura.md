@@ -71,10 +71,49 @@ custo, migrations e pools sem ganho proporcional.
 
 ## 3. Modelo de organização
 
-`organizations` (no COND): id, slug (igual ao da Platform), nome, nome curto, Platform organization id, status,
-prefixo de protocolo, identidade visual (logo, cores complementares), contato, endereço, tribunal do DataJud,
-módulos públicos. O RST: slug `santissima-trindade`, kind `Condominio` na Platform, prefixo de protocolo `RST`
-(protocolos antigos seguem válidos). CNPJ e endereço vêm do cadastro real do portal; nada inventado.
+`organizations` (no COND): id, slug (igual ao da Platform), nome, nome curto, status (`ACTIVE`/`DISABLED`),
+Platform organization id, prefixo de protocolo, tribunal do DataJud, planta (blocos e unidades), cor complementar.
+CNPJ, endereço e logo seguem em `config_portal`, agora uma linha por organização. O RST: id
+`8f282e77-cb75-4d75-99fd-9ac01057227c`, slug `santissima-trindade`, kind `Condominio` na Platform, prefixo `RST`
+(protocolos antigos seguem válidos), tribunal `TJCE`, planta A–I × 101–408 (as regras que o código já validava).
+O nome vem de `config_portal.nomeCondominio`; nada inventado.
+
+### Implementação (PR 2, expand)
+
+- Migration `20261103000000_organizations`: tabela `organizations`; `organizationId` anulável e indexado nas 19
+  tabelas de domínio; tudo o que existe vai para o RST (a organização só nasce numa instalação que já tem dados);
+  unicidades por organização (e-mail, protocolo, número de processo, uma configuração); RLS `ENABLE` + `FORCE` com a
+  política `<tabela>_organization_isolation` em cada tabela. Nenhuma linha apagada ou alterada além do novo campo.
+- `lib/tenant-path.ts` (Edge) e `middleware.ts`: o primeiro segmento do caminho é o slug; o middleware descarta o
+  cabeçalho `x-cond-organization` vindo do cliente e põe o do caminho. Slugs reservados (`api`, `admin`, `entrar`...)
+  nunca são condomínio. Host legado (`LEGACY_HOST_ORGANIZATION`) recebe `308` para o caminho do condomínio.
+- `lib/tenant.ts`: `requireTenant()` resolve a organização ativa (desconhecida ou desativada: 404 neutro) e entrega
+  `db`, o cliente com escopo; `organizationTransaction()` para as transações interativas (demandas), com
+  `organizationId` explícito em cada escrita.
+- `lib/staff.ts` e `lib/permissions.ts`: sessão só vale na organização em que foi aberta; papel e status relidos do
+  banco a cada requisição; toda rota de escrita confere a permissão na matriz central (mesmo efeito de antes).
+- Referências entre registros (categoria do lançamento, processo da multa ou notificação) são conferidas na
+  organização; o banco passa a garantir com chaves compostas no contract.
+- Login por condomínio: o formulário envia o slug; a conta é procurada só nele; custo de bcrypt igual com ou sem conta.
+- Raiz `/`: página do Orken COND, sem listar condomínios. `app/not-found.tsx`: 404 neutro.
+
+### Provas
+
+- `tests/integration/isolation.test.ts`: dois condomínios sintéticos; leitura pública, consulta de demanda, voto,
+  edição e exclusão pelo id, referência cruzada, sessão de outro condomínio e configuração, todos isolados.
+- `tests/integration/rls.test.ts` e a segunda execução da suíte no CI com o papel `cond_app`
+  (`scripts/db-runtime-role.sql`, sem superusuário nem `BYPASSRLS`): o banco sozinho barra o que o backend esquecer.
+- CI: instalação `0_init` com dados sintéticos recebe a migration sem perda; servidor de produção responde nas rotas
+  novas, no 404 neutro e no redirecionamento legado.
+
+### Deploy em produção (ordem)
+
+1. Backup novo do banco, com checksum e restauração de teste.
+2. `LEGACY_HOST_ORGANIZATION="www.transparenciarst.com.br=santissima-trindade"` no serviço antes do deploy (a versão
+   anterior ignora a variável). Sem ela, os caminhos antigos respondem 404.
+3. Merge com CI verde; o start roda `scripts/db-migrate.mjs` (migration) e sobe a versão nova.
+4. Conferir: contagem por tabela igual à do backup, nenhuma linha sem organização, caminhos antigos com `308`, portal
+   e gestão em `/santissima-trindade`. Sessões abertas antes pedem login de novo (o token antigo não tem organização).
 
 ## 4. Rotas
 

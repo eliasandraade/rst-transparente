@@ -1,7 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { usePathname } from "next/navigation";
+import Link from "@/lib/org-navigation";
+import { useOrgPathname as usePathname, prefixOrgPath, useOrgSlug } from "@/lib/org-navigation";
 import { signOut } from "next-auth/react";
 import { cn } from "@/lib/utils";
 import {
@@ -25,6 +25,7 @@ import {
   ExternalLink,
 } from "lucide-react";
 import ThemeToggle from "@/components/ThemeToggle";
+import { useOrganization } from "@/components/org/OrganizationProvider";
 
 const links = [
   { href: "/admin/dashboard", icone: LayoutDashboard, label: "Painel" },
@@ -46,7 +47,9 @@ interface AdminNavProps {
 }
 
 export default function AdminNav({ userRole }: AdminNavProps) {
+  const organization = useOrganization();
   const pathname = usePathname();
+  const orgSlug = useOrgSlug();
 
   function navClass(active: boolean) {
     return cn(
@@ -67,7 +70,7 @@ export default function AdminNav({ userRole }: AdminNavProps) {
           </div>
           <div>
             <div className="font-bold text-sm text-foreground leading-tight tracking-tight">
-              Transparência RST
+              {organization.shortName}
             </div>
             <div className="text-xs text-[var(--foreground-subtle)] leading-tight">
               Administração
@@ -146,7 +149,7 @@ export default function AdminNav({ userRole }: AdminNavProps) {
           Portal público
         </Link>
         <button
-          onClick={() => signOut({ callbackUrl: "/admin/login" })}
+          onClick={() => signOut({ callbackUrl: prefixOrgPath(orgSlug, "/admin/login") })}
           className="flex items-center gap-2.5 w-full px-3 py-2 rounded-md text-sm font-medium text-[var(--foreground-muted)] hover:text-[var(--danger)] hover:bg-[var(--danger-subtle)] transition-colors duration-150"
           style={{ minHeight: "auto" }}
           aria-label="Sair da área administrativa"
