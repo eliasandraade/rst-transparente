@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { mascarNumeroProcesso } from "@/lib/juridico";
+import { sumMoney, moneyToNumber } from "@/lib/money";
 
 export async function GET() {
   try {
@@ -38,10 +39,7 @@ export async function GET() {
       }),
     ]);
 
-    const valorTotalMultas = multasPorStatus.reduce(
-      (acc, m) => acc + Number(m._sum.valor ?? 0),
-      0
-    );
+    const valorTotalMultas = moneyToNumber(sumMoney(multasPorStatus.map((m) => m._sum.valor)));
 
     const processosMascarados = processosList.map((p) => ({
       id: p.id,

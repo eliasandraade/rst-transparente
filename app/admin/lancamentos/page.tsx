@@ -7,6 +7,7 @@ import type { Metadata } from "next";
 import { PlusCircle, Pencil, Eye, EyeOff } from "lucide-react";
 import PublicarLancamentoButton from "@/components/admin/PublicarLancamentoButton";
 import PublicarTodosButton from "@/components/admin/PublicarTodosButton";
+import { sumMoney, moneyToNumber } from "@/lib/money";
 
 export const metadata: Metadata = { title: "Lançamentos" };
 
@@ -29,12 +30,8 @@ export default async function LancamentosPage({ searchParams }: Props) {
     orderBy: [{ tipo: "asc" }, { data: "asc" }],
   });
 
-  const totalReceitas = lancamentos
-    .filter((l) => l.tipo === "RECEITA")
-    .reduce((acc, l) => acc + Number(l.valor), 0);
-  const totalDespesas = lancamentos
-    .filter((l) => l.tipo === "DESPESA")
-    .reduce((acc, l) => acc + Number(l.valor), 0);
+  const totalReceitas = moneyToNumber(sumMoney(lancamentos.filter((l) => l.tipo === "RECEITA").map((l) => l.valor)));
+  const totalDespesas = moneyToNumber(sumMoney(lancamentos.filter((l) => l.tipo === "DESPESA").map((l) => l.valor)));
 
   return (
     <div className="space-y-6">

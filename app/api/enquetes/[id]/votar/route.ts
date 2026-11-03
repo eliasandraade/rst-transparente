@@ -1,28 +1,33 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { clientIp } from "@/lib/client-ip";
+import { RATE_LIMITS, rateLimit, rateLimitResponseBody } from "@/lib/rate-limit";
 
 const VotoSchema = z.object({
-  opcaoIds: z.array(z.string()).min(1),
+  opcaoIds: z.array(z.string().max(40)).min(1).max(50),
 });
 
 export async function POST(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
+  // Um voto por IP é a regra atual de participação (docs/orken-cond/arquitetura.md);
+  // o IP precisa ser o real (cabeçalho confiável), nunca o que o cliente escreve.
+  const ip = clientIp(request);
+  const limited = await rateLimit(RATE_LIMITS.pollVote, ip);
+  if (!limited.allowed) {
+    return NextResponse.json(rateLimitResponseBody(limited), { status: limited.reason === "limited" ? 429 : 503 });
+  }
   try {
     const { id: enqueteId } = await params;
     const body = await request.json();
-    const { opcaoIds } = VotoSchema.parse(body);
-
-    const ip =
-      request.headers.get("x-forwarded-for")?.split(",")[0] ??
-      request.headers.get("x-real-ip") ??
-      "unknown";
+    const { opcaoIds: recebidas } = VotoSchema.parse(body);
+    const opcaoIds = [...new Set(recebidas)];
 
     const enquete = await prisma.enquete.findUnique({
       where: { id: enqueteId },
-      select: { id: true, tipo: true, status: true, dataFim: true },
+      select: { id: true, tipo: true, status: true, dataFim: true, opcoes: { select: { id: true } } },
     });
 
     if (!enquete) {
@@ -33,6 +38,11 @@ export async function POST(
     }
     if (enquete.dataFim && new Date() > enquete.dataFim) {
       return NextResponse.json({ error: "Enquete encerrada" }, { status: 400 });
+    }
+    // Só opções desta enquete: uma opção de outra enquete corromperia a contagem.
+    const validas = new Set(enquete.opcoes.map((opcao) => opcao.id));
+    if (!opcaoIds.every((opcaoId) => validas.has(opcaoId))) {
+      return NextResponse.json({ error: "Opção inválida" }, { status: 400 });
     }
 
     if (enquete.tipo === "UNICA") {

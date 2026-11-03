@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
-import { verifyAccessCode, checkRateLimit, getClientIp } from "@/lib/demandas";
+import { verifyAccessCode, DUMMY_ACCESS_CODE_HASH } from "@/lib/demandas";
+import { clientIp } from "@/lib/client-ip";
+import { RATE_LIMITS, rateLimit, rateLimitResponseBody } from "@/lib/rate-limit";
 
 const LookupSchema = z.object({
   protocol: z.string().min(1),
@@ -11,13 +13,9 @@ const LookupSchema = z.object({
 const INVALID_MSG = "Protocolo ou código inválido. Verifique os dados e tente novamente.";
 
 export async function POST(request: Request) {
-  const ip = getClientIp(request);
-
-  if (!checkRateLimit(ip, 5, 60_000)) {
-    return NextResponse.json(
-      { error: "Muitas tentativas. Aguarde 1 minuto e tente novamente." },
-      { status: 429 }
-    );
+  const limited = await rateLimit(RATE_LIMITS.demandLookup, clientIp(request));
+  if (!limited.allowed) {
+    return NextResponse.json(rateLimitResponseBody(limited), { status: limited.reason === "limited" ? 429 : 503 });
   }
 
   try {
@@ -39,13 +37,11 @@ export async function POST(request: Request) {
       },
     });
 
-    if (!demand) {
+    // Protocolo inexistente e código errado respondem igual (status, mensagem e
+    // custo): a consulta não revela quais protocolos existem.
+    const valid = await verifyAccessCode(accessCode, demand?.accessCode ?? DUMMY_ACCESS_CODE_HASH);
+    if (!demand || !valid) {
       return NextResponse.json({ error: INVALID_MSG }, { status: 404 });
-    }
-
-    const valid = await verifyAccessCode(accessCode, demand.accessCode);
-    if (!valid) {
-      return NextResponse.json({ error: INVALID_MSG }, { status: 401 });
     }
 
     return NextResponse.json({

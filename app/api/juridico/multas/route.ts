@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { z } from "zod";
+import { moneySchema } from "@/lib/money";
 import { registrarAuditoria, validarBloco, validarUnidade } from "@/lib/juridico";
 import type { MultaStatus } from "@prisma/client";
 
@@ -15,7 +16,7 @@ const CreateMultaSchema = z.object({
   unidade: z.string().min(3).max(3),
   motivo: z.string().min(3, "Motivo muito curto").max(200),
   descricaoInterna: z.string().max(2000).optional().nullable(),
-  valor: z.number().positive("Valor deve ser positivo"),
+  valor: moneySchema({ positive: true }),
   dataAplicacao: z.string().min(1, "Data de aplicação obrigatória"),
   dataVencimento: z.string().optional().nullable(),
   anexoUrl: z.string().url().optional().nullable(),

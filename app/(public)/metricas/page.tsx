@@ -10,6 +10,7 @@ import FiltroPeriodo from "@/components/public/FiltrodePeriodo";
 import type { MetricasPeriodo } from "@/types";
 import type { Metadata } from "next";
 import { TrendingUp, TrendingDown, Scale, BarChart3, CalendarDays } from "lucide-react";
+import { sumMoney, moneyToNumber } from "@/lib/money";
 
 export const metadata: Metadata = {
   title: "Painel de Métricas",
@@ -30,34 +31,30 @@ async function getMetricas(periodo: string): Promise<MetricasPeriodo> {
   const receitas = lancamentos.filter((l) => l.tipo === "RECEITA");
   const despesas = lancamentos.filter((l) => l.tipo === "DESPESA");
 
-  const receitaTotal = receitas.reduce((acc, l) => acc + Number(l.valor), 0);
-  const despesaTotal = despesas.reduce((acc, l) => acc + Number(l.valor), 0);
+  // Somas em decimal exato; o número só aparece no fim, para exibir.
+  const receitaExata = sumMoney(receitas.map((l) => l.valor));
+  const despesaExata = sumMoney(despesas.map((l) => l.valor));
+  const receitaTotal = moneyToNumber(receitaExata);
+  const despesaTotal = moneyToNumber(despesaExata);
 
-  const porCategoria = new Map<
-    string,
-    { nome: string; cor: string; total: number }
-  >();
+  const porCategoria = new Map<string, { nome: string; cor: string; valores: typeof despesas[number]["valor"][] }>();
   for (const l of despesas) {
     const existente = porCategoria.get(l.categoriaId);
-    if (existente) {
-      existente.total += Number(l.valor);
-    } else {
-      porCategoria.set(l.categoriaId, {
-        nome: l.categoria.nome,
-        cor: l.categoria.cor,
-        total: Number(l.valor),
-      });
-    }
+    if (existente) existente.valores.push(l.valor);
+    else porCategoria.set(l.categoriaId, { nome: l.categoria.nome, cor: l.categoria.cor, valores: [l.valor] });
   }
 
   const despesasPorCategoria = Array.from(porCategoria.entries())
-    .map(([id, { nome, cor, total }]) => ({
-      categoriaId: id,
-      categoriaNome: nome,
-      categoriaCor: cor,
-      total,
-      percentual: despesaTotal > 0 ? (total / despesaTotal) * 100 : 0,
-    }))
+    .map(([id, { nome, cor, valores }]) => {
+      const total = sumMoney(valores);
+      return {
+        categoriaId: id,
+        categoriaNome: nome,
+        categoriaCor: cor,
+        total: moneyToNumber(total),
+        percentual: despesaExata.greaterThan(0) ? total.div(despesaExata).times(100).toNumber() : 0,
+      };
+    })
     .sort((a, b) => b.total - a.total);
 
   const [ano, mes] = periodo.split("-").map(Number);
@@ -80,16 +77,21 @@ async function getMetricas(periodo: string): Promise<MetricasPeriodo> {
   const evolucaoMensal = periodosUltimos6.map((p) => {
     const r = dadosHistoricos.find((d) => d.periodo === p && d.tipo === "RECEITA");
     const d = dadosHistoricos.find((d) => d.periodo === p && d.tipo === "DESPESA");
-    const receita = Number(r?._sum.valor ?? 0);
-    const despesa = Number(d?._sum.valor ?? 0);
-    return { periodo: p, receita, despesa, saldo: receita - despesa };
+    const receita = sumMoney([r?._sum.valor]);
+    const despesa = sumMoney([d?._sum.valor]);
+    return {
+      periodo: p,
+      receita: moneyToNumber(receita),
+      despesa: moneyToNumber(despesa),
+      saldo: moneyToNumber(receita.minus(despesa)),
+    };
   });
 
   return {
     periodo,
     receitaTotal,
     despesaTotal,
-    saldo: receitaTotal - despesaTotal,
+    saldo: moneyToNumber(receitaExata.minus(despesaExata)),
     despesasPorCategoria,
     evolucaoMensal,
   };

@@ -1,0 +1,93 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    name: Lint · Tipos · Testes de unidade
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+
+  integration:
+    name: Migrations · Integração (PostgreSQL + Redis reais) · Build
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          # Banco descartável do CI, só na rede do job: autenticação trust, sem senha.
+          POSTGRES_USER: cond
+          POSTGRES_DB: cond_test
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports: ["5432:5432"]
+        options: >-
+          --health-cmd "pg_isready -U cond -d cond_test"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s --health-timeout 5s --health-retries 20
+    env:
+      DATABASE_URL: postgresql://cond@localhost:5432/cond_test
+      SHADOW_DATABASE_URL: postgresql://cond@localhost:5432/cond_shadow
+      REDIS_URL: redis://localhost:6379
+      CLIENT_IP_HEADER: x-real-ip
+      NEXTAUTH_URL: http://localhost:3000
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx prisma generate
+      - name: Segredo de sessão só desta execução
+        run: echo "NEXTAUTH_SECRET=$(openssl rand -hex 32)" >> "$GITHUB_ENV"
+      - name: Banco de sombra para conferir schema × migrations
+        run: psql -h localhost -U cond -d cond_test -c "CREATE DATABASE cond_shadow"
+      - name: schema.prisma e migrations em sincronia
+        run: npx prisma migrate diff --from-migrations prisma/migrations --to-schema-datamodel prisma/schema.prisma --shadow-database-url "$SHADOW_DATABASE_URL" --exit-code
+      - name: Migrations num banco limpo
+        run: npx prisma migrate deploy
+      - name: Baseline de um banco criado por db push (como o de produção)
+        env:
+          PUSHED: postgresql://cond@localhost:5432/cond_pushed
+        run: |
+          psql -h localhost -U cond -d cond_test -c "CREATE DATABASE cond_pushed"
+          DATABASE_URL="$PUSHED" npx prisma db push --skip-generate
+          DATABASE_URL="$PUSHED" node scripts/db-migrate.mjs
+          DATABASE_URL="$PUSHED" node scripts/db-migrate.mjs
+          test "$(psql -h localhost -U cond -d cond_pushed -Atc "select count(*) from _prisma_migrations where migration_name='0_init' and finished_at is not null")" = "1"
+      - name: Banco com divergência é recusado sem nada marcado
+        env:
+          DRIFTED: postgresql://cond@localhost:5432/cond_drifted
+        run: |
+          psql -h localhost -U cond -d cond_test -c "CREATE DATABASE cond_drifted"
+          DATABASE_URL="$DRIFTED" npx prisma db push --skip-generate
+          psql -h localhost -U cond -d cond_drifted -c 'ALTER TABLE users ADD COLUMN "fora_do_schema" text'
+          if DATABASE_URL="$DRIFTED" node scripts/db-migrate.mjs; then echo "deveria ter recusado"; exit 1; fi
+          test "$(psql -h localhost -U cond -d cond_drifted -Atc "select to_regclass('public._prisma_migrations') is null")" = "t"
+      - run: npm run test:integration
+      - run: npm run build
