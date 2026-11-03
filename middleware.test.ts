@@ -49,6 +49,22 @@ describe("middleware", () => {
     expect(middleware(request("/condominio-a/admin/login")).status).toBe(200);
   });
 
+  it("toda resposta sai com CSP de nonce próprio e cabeçalhos de segurança", () => {
+    const first = middleware(request("/condominio-a"));
+    const second = middleware(request("/"));
+    const csp = first.headers.get("content-security-policy")!;
+    expect(csp).toMatch(/script-src 'self' 'nonce-[A-Za-z0-9+/=]{20,}' 'strict-dynamic'/);
+    expect(csp).toContain("frame-ancestors 'none'");
+    expect(csp).not.toBe(second.headers.get("content-security-policy"));
+    // O Next recebe a mesma CSP na requisição para pôr o nonce nos próprios scripts.
+    expect(first.headers.get("x-middleware-request-content-security-policy")).toBe(csp);
+    for (const res of [first, middleware(request("/condominio-a/api/demandas", { method: "POST", headers: { origin: "https://outro.test" } }))]) {
+      expect(res.headers.get("strict-transport-security")).toContain("max-age=31536000");
+      expect(res.headers.get("x-content-type-options")).toBe("nosniff");
+      expect(res.headers.get("x-frame-options")).toBe("DENY");
+    }
+  });
+
   it("host legado: 308 para o caminho do condomínio, exceto rotas do produto", () => {
     process.env.LEGACY_HOST_ORGANIZATION = "legado.test=condominio-a";
     const res = middleware(request("/demandas/acompanhar/RST-2026-K7M9Q2?x=1", { headers: { host: "legado.test" } }));

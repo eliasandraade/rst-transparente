@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { ORGANIZATION_HEADER, isOrganizationSlug } from "@/lib/tenant-path";
 import { CSRF_COOKIE, CSRF_HEADER, SESSION_COOKIE } from "@/lib/session-cookies";
+import { STATIC_SECURITY_HEADERS, contentSecurityPolicy, newNonce } from "@/lib/security-headers";
 
 // Runtime Edge: só caminho, cabeçalhos e cookies; sessão e conta são conferidas no servidor (lib/staff.ts).
 
@@ -36,7 +37,20 @@ function forbidden(message: string): NextResponse {
   return NextResponse.json({ error: message }, { status: 403 });
 }
 
+/** Toda resposta sai com CSP (nonce desta requisição) e os demais cabeçalhos de segurança. */
+function secured(response: NextResponse, csp: string): NextResponse {
+  response.headers.set("Content-Security-Policy", csp);
+  for (const [name, value] of STATIC_SECURITY_HEADERS) response.headers.set(name, value);
+  return response;
+}
+
 export default function middleware(req: NextRequest) {
+  const nonce = newNonce();
+  const csp = contentSecurityPolicy(nonce);
+  return secured(route(req, nonce, csp), csp);
+}
+
+function route(req: NextRequest, nonce: string, csp: string): NextResponse {
   const { pathname, search } = req.nextUrl;
 
   const legacy = legacyOrganization(req.headers.get("host"));
@@ -51,6 +65,9 @@ export default function middleware(req: NextRequest) {
   // O servidor decide a organização pelo caminho; o cabeçalho que vier do cliente é descartado.
   const headers = new Headers(req.headers);
   headers.delete(ORGANIZATION_HEADER);
+  // O Next lê o nonce da CSP da requisição e o põe nos próprios scripts; o layout o passa ao tema.
+  headers.set("x-nonce", nonce);
+  headers.set("Content-Security-Policy", csp);
   if (!isOrganizationSlug(slug)) return NextResponse.next({ request: { headers } });
   headers.set(ORGANIZATION_HEADER, slug);
 
