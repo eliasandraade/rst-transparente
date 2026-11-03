@@ -12,6 +12,7 @@ interface Usuario {
   role: string;
   ativo: boolean;
   createdAt: Date;
+  orkenLinkedAt: Date | null;
 }
 
 interface Props {
@@ -61,6 +62,11 @@ export default function UsuarioRow({ usuario, labelRole, sessionRole, sessionId 
         <span className={`text-xs font-medium px-2 py-1 rounded-full ${usuario.ativo ? "bg-success-light text-green-700" : "bg-muted text-muted-foreground"}`}>
           {usuario.ativo ? "Ativo" : "Inativo"}
         </span>
+        {usuario.orkenLinkedAt && (
+          <span className="ml-2 text-xs font-medium px-2 py-1 rounded-full bg-primary/10 text-primary" title="Entra pela conta Orken">
+            Conta Orken
+          </span>
+        )}
       </td>
       <td className="px-5 py-3.5 text-right">
         {podeAlterar && (
