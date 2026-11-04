@@ -59,5 +59,6 @@ de produção de pé.
 
 ## Deploy
 
-`railway.toml`: o start roda `scripts/db-migrate.mjs` (migrations) e sobe o app; saúde em `/api/health`. Ordem de um
-deploy com migration e conferências: `docs/orken-cond/arquitetura.md`.
+`.railway/railway.ts` (Infrastructure as Code do Railway; procedimento em `.railway/README.md`): o start roda
+`scripts/db-migrate.mjs` (migrations) e sobe o app; saúde em `/api/health`. Ordem de um deploy com migration e
+conferências: `docs/orken-cond/arquitetura.md`.

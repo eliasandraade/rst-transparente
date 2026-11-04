@@ -1,5 +1,5 @@
 /**
- * Migrations no start do serviço (railway.toml).
+ * Migrations no start do serviço (.railway/railway.ts).
  *
  * O banco de produção nasceu com `prisma db push`, sem histórico de migrations. Na
  * primeira vez (há tabelas, não há `_prisma_migrations`), a migration 0_init é
